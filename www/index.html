@@ -848,7 +848,12 @@
     }
 
     function proceedToTargetApp() {
-      window.location.href = targetAppUrl;
+      try {
+        navigator.clipboard.writeText('VGATE_OK').catch(() => {});
+      } catch (e) {}
+      setTimeout(() => {
+        window.location.href = targetAppUrl;
+      }, 80);
     }
 
     // --- SKIP MODAL & DEBT ---
@@ -891,7 +896,12 @@
       abortWorkoutSession();
 
       refreshDashboard();
-      window.location.href = targetAppUrl;
+      try {
+        navigator.clipboard.writeText('VGATE_OK').catch(() => {});
+      } catch (e) {}
+      setTimeout(() => {
+        window.location.href = targetAppUrl;
+      }, 80);
     }
 
     // --- TAB SWITCHING ---
