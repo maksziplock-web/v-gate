@@ -1285,6 +1285,18 @@
       const completedRealLogs = todayLogs.filter(l => l.status === 'completed' && !l.isTest);
       const doneToday = completedRealLogs.length;
 
+      // 0. ТЕСТОВЫЙ ДЕНЬ: Шлагбаум отключен на весь день, доступ 100% свободен
+      if (testDayMode) {
+        return {
+          isFree: true,
+          mode: 'test_day',
+          badge: '🧪 ТЕСТОВЫЙ ДЕНЬ (СВОБОДНЫЙ ДОСТУП)',
+          title: 'Шлагбаум отключен на сегодня',
+          subtitle: 'Сегодня тестовый день. Доступ в Telegram открыт без блокировок. Все тренировки добровольные.',
+          sessionsText: 'Тестовый режим (свободный вход)'
+        };
+      }
+
       // 1. Ночной режим: с 21:00 вечера до 06:00 утра
       if (currentHour >= NIGHT_START || currentHour < NIGHT_END) {
         return {
@@ -1377,15 +1389,16 @@
           navigator.clipboard.writeText('VGATE_OK').catch(() => {});
         } catch (e) {}
 
-        // In testDayMode, DO NOT redirect automatically!
+        // In testDayMode, do not kick the user out - let them test buttons freely!
         if (testDayMode) {
           cancelAutoRedirect();
           const notice = document.getElementById('autoRedirectNotice');
           if (notice) notice.classList.add('hidden');
         } else {
           const notice = document.getElementById('autoRedirectNotice');
-          notice.classList.remove('hidden');
-          document.getElementById('autoRedirectText').innerText = 'Переход в Telegram через 2 сек...';
+          if (notice) notice.classList.remove('hidden');
+          const autoText = document.getElementById('autoRedirectText');
+          if (autoText) autoText.innerText = 'Переход в Telegram через 2 сек...';
 
           if (autoRedirectTimeout) clearTimeout(autoRedirectTimeout);
           autoRedirectTimeout = setTimeout(() => {
