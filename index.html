@@ -88,7 +88,7 @@
     </div>
 
     <!-- Active Set Counter Mode -->
-    <div id="setCounterBox" class="my-auto text-center space-y-6">
+    <div id="setCounterBox" class="my-auto text-center space-y-5">
       <div class="space-y-1.5 px-4">
         <h2 id="sessionExTitle" class="text-2xl font-bold tracking-tight text-white">Отжимания с ногами на диване</h2>
         <p id="sessionExCue" class="text-xs text-zinc-400 max-w-xs mx-auto leading-relaxed">
@@ -96,18 +96,26 @@
         </p>
       </div>
 
-      <!-- Giant Clean Number -->
-      <div class="py-4">
-        <div id="sessionMainValue" class="text-7xl font-extrabold tracking-tighter text-white font-mono">
-          12
+      <!-- Clean Interactive Stepper -->
+      <div class="py-2 flex items-center justify-center gap-5">
+        <button type="button" onclick="adjustCurrentSetReps(-1)" class="w-14 h-14 rounded-2xl bg-zinc-900 border border-white/10 active:scale-90 text-2xl font-bold text-zinc-300 hover:text-white flex items-center justify-center transition select-none shadow-lg">
+          –
+        </button>
+        <div class="text-center min-w-[120px]">
+          <div id="sessionMainValue" class="text-7xl font-black tracking-tighter text-white font-mono">
+            12
+          </div>
+          <div id="sessionUnitLabel" class="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest mt-1">
+            повторений
+          </div>
         </div>
-        <div id="sessionUnitLabel" class="text-xs font-medium text-zinc-500 uppercase tracking-widest mt-2">
-          повторений
-        </div>
+        <button type="button" onclick="adjustCurrentSetReps(1)" class="w-14 h-14 rounded-2xl bg-zinc-900 border border-white/10 active:scale-90 text-2xl font-bold text-zinc-300 hover:text-white flex items-center justify-center transition select-none shadow-lg">
+          +
+        </button>
       </div>
 
       <!-- Clean Set Dots -->
-      <div id="sessionDotsContainer" class="flex items-center justify-center gap-2">
+      <div id="sessionDotsContainer" class="flex items-center justify-center gap-2 pt-1">
         <!-- populated by JS -->
       </div>
     </div>
@@ -139,31 +147,58 @@
   <!-- ========================================== -->
   <!-- 2. WORKOUT VICTORY / UNLOCK OVERLAY -->
   <!-- ========================================== -->
-  <div id="victoryOverlay" class="fixed inset-0 z-50 bg-black flex flex-col justify-between p-6 hidden safe-top safe-bottom text-center">
-    <div class="pt-8">
-      <div class="w-14 h-14 mx-auto rounded-full bg-zinc-900 border border-white/10 flex items-center justify-center text-2xl mb-4 text-emerald-400 font-bold">
+  <div id="victoryOverlay" class="fixed inset-0 z-50 bg-black flex flex-col justify-between p-6 hidden safe-top safe-bottom text-center overflow-y-auto">
+    <div class="pt-2">
+      <div id="victoryIconBox" class="w-13 h-13 mx-auto rounded-full bg-zinc-900 border border-white/10 flex items-center justify-center text-2xl mb-2.5 text-emerald-400 font-bold">
         ✓
       </div>
-      <h2 class="text-2xl font-bold text-white tracking-tight">Норматив выполнен</h2>
-      <p class="text-xs text-zinc-400 mt-1">Доступ к приложению открыт. Стрик увеличен.</p>
+      <h2 id="victoryHeaderTitle" class="text-2xl font-bold text-white tracking-tight">Норматив выполнен</h2>
+      <p id="victoryHeaderSubtitle" class="text-xs text-zinc-400 mt-1">Результат подходов готов к записи.</p>
     </div>
 
-    <div class="app-card p-5 space-y-2 my-auto max-w-sm mx-auto w-full text-left">
-      <div class="text-[11px] uppercase font-semibold text-zinc-500 tracking-wider">Результат сессии</div>
-      <div id="victorySummaryText" class="text-sm font-semibold text-white">
-        Отжимания с ногами на диване: 3 подхода
+    <!-- Sets & Reps Confirmation Card -->
+    <div class="app-card p-5 space-y-3 my-auto max-w-sm mx-auto w-full text-left">
+      <div class="flex items-center justify-between">
+        <div class="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Запись подходов и повторений</div>
+        <span id="victorySetsBadge" class="text-xs font-mono font-bold text-emerald-400">3 подхода</span>
       </div>
-      <div class="text-xs text-emerald-400/90 pt-1">
-        Долг списан • Прогресс зафиксирован
+      <div id="victoryExerciseTitle" class="text-sm font-bold text-white">
+        Отжимания с ногами на диване
+      </div>
+
+      <!-- Sets Rows List -->
+      <div id="victorySetsEditorList" class="space-y-2 py-1 max-h-48 overflow-y-auto">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- Add / Remove Set Row Buttons -->
+      <div class="flex items-center gap-2 pt-1 border-t border-white/5">
+        <button type="button" onclick="victoryAddSet()" class="flex-1 py-2 px-3 rounded-xl bg-zinc-900 border border-white/10 text-xs font-semibold text-zinc-300 hover:text-white active:scale-95 transition text-center flex items-center justify-center gap-1">
+          <span>+</span> <span>Добавить подход</span>
+        </button>
+        <button type="button" onclick="victoryRemoveLastSet()" class="py-2 px-3 rounded-xl bg-zinc-900 border border-white/10 text-xs font-semibold text-zinc-400 hover:text-rose-400 active:scale-95 transition text-center">
+          ✕ Убрать
+        </button>
+      </div>
+
+      <!-- Total Reps Summary Line -->
+      <div class="flex items-center justify-between text-xs pt-1 border-t border-white/5 text-zinc-400">
+        <span>Всего повторений:</span>
+        <span id="victoryTotalRepsCount" class="font-bold text-white font-mono text-sm">36</span>
+      </div>
+
+      <div id="victoryStatusFootnote" class="text-[11px] text-emerald-400/90 pt-0.5">
+        Долг списан • Прогресс фиксируется
       </div>
     </div>
 
-    <div class="space-y-2.5 pb-2 max-w-sm mx-auto w-full">
-      <button type="button" onclick="proceedToTargetApp()" class="w-full py-4 px-5 rounded-2xl bg-white hover:bg-zinc-200 active:scale-98 text-black font-bold text-sm transition">
-        <span id="targetAppBtnText">Открыть Telegram</span>
+    <!-- Bottom Actions -->
+    <div class="space-y-2 pb-2 max-w-sm mx-auto w-full">
+      <button type="button" id="victoryPrimaryBtn" onclick="confirmAndFinishSession(false)" class="w-full py-4 px-5 rounded-2xl bg-white hover:bg-zinc-200 active:scale-98 text-black font-bold text-sm transition">
+        ✓ Сохранить и остаться в V-Gate
       </button>
-      <button type="button" onclick="closeVictoryOverlay()" class="w-full py-3 rounded-2xl bg-zinc-900 border border-white/10 text-xs text-zinc-300 font-medium active:scale-98 transition">
-        Остаться в V-Gate
+      <button type="button" id="victoryTelegramBtn" onclick="confirmAndFinishSession(true)" class="w-full py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs text-zinc-300 font-medium active:scale-98 transition flex items-center justify-center gap-1.5">
+        <span>✈️</span> <span>Проверить переход в Telegram</span>
       </button>
     </div>
   </div>
@@ -239,6 +274,20 @@
     <!-- ==================== TAB 1: WORKOUT (ГЛАВНАЯ) ==================== -->
     <section id="tabWorkout" class="space-y-3.5">
       
+      <!-- Test Day Mode Banner -->
+      <div id="testDayBanner" class="app-card p-3 flex items-center justify-between border-emerald-500/20 bg-emerald-500/[0.04]">
+        <div class="flex items-center gap-2.5">
+          <span class="text-base">🧪</span>
+          <div class="space-y-0.5">
+            <div class="text-xs font-bold text-white">Тестовый режим (сегодня)</div>
+            <div class="text-[11px] text-zinc-400">Авто-открытие приложений отключено</div>
+          </div>
+        </div>
+        <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+          ТЕСТ
+        </span>
+      </div>
+
       <!-- Debt Notification Card (Conditional) -->
       <div id="debtCard" class="hidden app-card p-4 flex items-center justify-between border-amber-500/20 bg-amber-500/[0.04]">
         <div class="space-y-0.5">
@@ -283,12 +332,17 @@
 
         <!-- Action Buttons -->
         <div class="space-y-2 pt-1">
-          <button type="button" onclick="proceedToTargetApp()" class="w-full py-4 px-5 rounded-2xl bg-white hover:bg-zinc-200 active:scale-98 text-black font-bold text-sm transition">
-            Открыть Telegram
+          <button type="button" onclick="startWorkoutSession()" class="w-full py-4 px-5 rounded-2xl bg-white hover:bg-zinc-200 active:scale-98 text-black font-bold text-sm transition">
+            Выполнить тренировку
           </button>
-          <button type="button" onclick="startWorkoutSession()" class="w-full py-3 px-4 rounded-2xl bg-zinc-900 border border-white/10 text-zinc-300 font-semibold text-xs active:scale-95 transition text-center">
-            + Выполнить тренировку вне очереди
-          </button>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" onclick="startTestWorkoutSession()" class="py-3 px-3 rounded-2xl bg-zinc-900 border border-white/10 text-emerald-400 font-semibold text-xs active:scale-95 transition text-center flex items-center justify-center gap-1.5">
+              <span>🧪</span> <span>Тест кнопок</span>
+            </button>
+            <button type="button" onclick="proceedToTargetApp()" class="py-3 px-3 rounded-2xl bg-zinc-900 border border-white/10 text-zinc-400 font-semibold text-xs active:scale-95 transition text-center">
+              Открыть Telegram
+            </button>
+          </div>
         </div>
       </div>
 
@@ -323,14 +377,14 @@
         <!-- Action Controls -->
         <div class="space-y-2 pt-1">
           <button type="button" onclick="startWorkoutSession()" class="w-full py-4 px-5 rounded-2xl bg-white hover:bg-zinc-200 active:scale-98 text-black font-bold text-sm transition">
-            Начать выполнение
+            Начать тренировку
           </button>
           <div class="grid grid-cols-2 gap-2">
-            <button type="button" onclick="openSkipModal()" class="py-3 px-3 rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-300 font-semibold text-xs active:scale-98 transition text-center">
-              Пропустить (с причиной)
+            <button type="button" onclick="startTestWorkoutSession()" class="py-3 px-3 rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-emerald-400 font-bold text-xs active:scale-98 transition text-center flex items-center justify-center gap-1.5">
+              <span>🧪</span> <span>Тест кнопок (0 в статку)</span>
             </button>
-            <button type="button" onclick="quickTestPass()" class="py-3 px-3 rounded-2xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 font-bold text-xs active:scale-98 transition text-center flex items-center justify-center gap-1">
-              <span>⚡️</span> <span>Тест (вход в ТГ)</span>
+            <button type="button" onclick="openSkipModal()" class="py-3 px-3 rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-400 font-semibold text-xs active:scale-98 transition text-center">
+              Пропустить
             </button>
           </div>
         </div>
@@ -376,6 +430,9 @@
         <button type="button" onclick="filterExercises('all')" id="filterBtnAll" class="px-3.5 py-1.5 rounded-xl bg-white text-black font-semibold text-xs whitespace-nowrap active:scale-95 transition">
           Все
         </button>
+        <button type="button" onclick="filterExercises('test')" id="filterBtnTest" class="px-3.5 py-1.5 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white font-medium text-xs whitespace-nowrap active:scale-95 transition border border-white/5">
+          🧪 Тест кнопок
+        </button>
         <button type="button" onclick="filterExercises('chest')" id="filterBtnChest" class="px-3.5 py-1.5 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white font-medium text-xs whitespace-nowrap active:scale-95 transition border border-white/5">
           Верх и центр груди
         </button>
@@ -409,6 +466,23 @@
         </div>
         <p class="text-xs text-zinc-400 leading-relaxed">
           Программа рассчитана под твои 25 базовых отжиманий. Понижение нагрузки заблокировано, чтобы исключить поблажки и сохранять темп.
+        </p>
+      </div>
+
+      <!-- Test Day Toggle Card -->
+      <div class="app-card p-4 space-y-2">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-xs font-semibold text-white">Режим «Тестовый день»</div>
+            <div class="text-[11px] text-zinc-400">Не открывать приложения автоматически</div>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="toggleTestDayInput" onchange="setTestDayMode(this.checked)" class="sr-only peer" checked>
+            <div class="w-11 h-6 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+          </label>
+        </div>
+        <p class="text-xs text-zinc-400 leading-relaxed">
+          Сегодня включен тестовый день: приложения не открываются автоматически, V-Gate остается открытым для проверки интерфейса и кнопок.
         </p>
       </div>
 
@@ -480,6 +554,21 @@
     // Specifically calibrated for Upper/Center Chest, Posture, Shoulder width, Waist vacuum.
     // Strictly eliminating triceps isolation and lower chest.
     const EXERCISES_DATA = [
+      // 0. ТЕСТОВОЕ УПРАЖНЕНИЕ (Проверка кнопок и таймеров — 0 в статистику)
+      {
+        id: 'test_system',
+        isTest: true,
+        zone: 'test',
+        zoneName: 'Тест / Проверка кнопок',
+        name: 'Тестовый прогон (Проверка кнопок)',
+        cue: 'Тестовый режим: проверка кнопок счетчика (+/-), таймера отдыха (8 сек) с пропуском, экрана подтверждения подходов и записи. В стрик и норму дня НЕ идет.',
+        tiers: {
+          1: { sets: 2, reps: 5, restSeconds: 8, isTime: false, label: '2 подхода × 5 повторений (тест)' },
+          2: { sets: 2, reps: 5, restSeconds: 8, isTime: false, label: '2 подхода × 5 повторений (тест)' },
+          3: { sets: 2, reps: 5, restSeconds: 8, isTime: false, label: '2 подхода × 5 повторений (тест)' }
+        }
+      },
+
       // Зона: Центр и верх груди (трицепс и низ груди исключены)
       {
         id: 'chest_decline',
@@ -709,13 +798,25 @@
     let currentActiveExercise = null;
     let activeSession = null;
     let restTimerInterval = null;
+    let testDayMode = true; // Тестовый день включен по умолчанию на сегодня
 
-    // Pick exercise for today: chest prioritized
+    async function setTestDayMode(enabled) {
+      testDayMode = enabled;
+      await dbSetSetting('testDayMode', enabled);
+      const banner = document.getElementById('testDayBanner');
+      if (banner) {
+        if (enabled) banner.classList.remove('hidden');
+        else banner.classList.add('hidden');
+      }
+      refreshDashboard();
+    }
+
+    // Pick exercise for today: chest prioritized (ignoring test exercise)
     function pickNextExercise() {
+      const realList = EXERCISES_DATA.filter(e => !e.isTest && e.zone !== 'test');
+      const chestList = realList.filter(e => e.zone === 'chest');
+      const otherList = realList.filter(e => e.zone !== 'chest');
       const dayNum = new Date().getDate();
-      // Prioritize chest exercises (indices 0, 1, 2)
-      const chestList = EXERCISES_DATA.filter(e => e.zone === 'chest');
-      const otherList = EXERCISES_DATA.filter(e => e.zone !== 'chest');
       
       // 2 out of 3 days focus strictly on upper or center chest
       if (dayNum % 3 !== 0) {
@@ -725,25 +826,34 @@
       }
     }
 
+    function startTestWorkoutSession() {
+      const testEx = EXERCISES_DATA.find(e => e.id === 'test_system') || EXERCISES_DATA[0];
+      startWorkoutSession(testEx);
+    }
+
     // --- WORKOUT INTERACTIVE SESSION ---
     function startWorkoutSession(overrideExercise = null) {
       currentActiveExercise = overrideExercise || currentActiveExercise || pickNextExercise();
+      const isTest = currentActiveExercise.isTest || currentActiveExercise.id === 'test_system';
       const tierData = currentActiveExercise.tiers[currentTier];
-      const totalSets = tierData.sets + accumulatedDebt;
+      const totalSets = isTest ? tierData.sets : (tierData.sets + accumulatedDebt);
 
       activeSession = {
         exercise: currentActiveExercise,
         tierData: tierData,
+        isTest: isTest,
         currentSet: 1,
         totalSets: totalSets,
-        reps: tierData.reps,
+        currentReps: tierData.reps,
+        actualSets: [],
         isTime: tierData.isTime,
+        restSeconds: isTest ? 8 : (tierData.restSeconds || 30),
         timerInterval: null
       };
 
       document.getElementById('sessionExTitle').innerText = currentActiveExercise.name;
       document.getElementById('sessionExCue').innerText = currentActiveExercise.cue;
-      document.getElementById('sessionZoneLabel').innerText = currentActiveExercise.zone === 'chest' ? 'ГРУДЬ' : (currentActiveExercise.zone === 'back' ? 'СПИНА' : (currentActiveExercise.zone === 'shoulders' ? 'ПЛЕЧИ' : 'КОР'));
+      document.getElementById('sessionZoneLabel').innerText = isTest ? 'ТЕСТ' : (currentActiveExercise.zone === 'chest' ? 'ГРУДЬ' : (currentActiveExercise.zone === 'back' ? 'СПИНА' : (currentActiveExercise.zone === 'shoulders' ? 'ПЛЕЧИ' : 'КОР')));
 
       document.getElementById('restTimerBox').classList.add('hidden');
       document.getElementById('setCounterBox').classList.remove('hidden');
@@ -756,13 +866,15 @@
 
     function renderSessionStep() {
       const s = activeSession;
-      document.getElementById('sessionProgressLabel').innerText = `Подход ${s.currentSet} из ${s.totalSets}`;
+      document.getElementById('sessionProgressLabel').innerText = s.isTest 
+        ? `Подход ${s.currentSet} из ${s.totalSets} (Тест)` 
+        : `Подход ${s.currentSet} из ${s.totalSets}`;
       
       const dotsCont = document.getElementById('sessionDotsContainer');
       dotsCont.innerHTML = '';
       for (let i = 1; i <= s.totalSets; i++) {
         const d = document.createElement('div');
-        d.className = `w-2 h-2 rounded-full transition-all ${i < s.currentSet ? 'bg-emerald-400' : (i === s.currentSet ? 'bg-white ring-2 ring-white/30' : 'bg-zinc-700')}`;
+        d.className = `w-2.5 h-2.5 rounded-full transition-all ${i < s.currentSet ? 'bg-emerald-400' : (i === s.currentSet ? 'bg-white ring-2 ring-white/30' : 'bg-zinc-800')}`;
         dotsCont.appendChild(d);
       }
 
@@ -771,22 +883,33 @@
       const actionBtn = document.getElementById('sessionActionBtn');
 
       if (s.isTime) {
-        mainVal.innerText = s.reps;
+        mainVal.innerText = s.currentReps;
         unitLabel.innerText = 'секунд (статика)';
-        actionBtn.innerText = 'Запустить секундомер подхода';
+        actionBtn.innerHTML = `<span>Запустить секундомер (${s.currentReps} сек.)</span>`;
         actionBtn.onclick = runStaticTimer;
       } else {
-        mainVal.innerText = s.reps;
+        mainVal.innerText = s.currentReps;
         unitLabel.innerText = 'повторений';
-        actionBtn.innerText = 'Подход выполнен';
+        actionBtn.innerHTML = `<span>Подход ${s.currentSet} выполнен (${s.currentReps} повт.)</span>`;
         actionBtn.onclick = completeCurrentSet;
       }
+    }
+
+    function adjustCurrentSetReps(delta) {
+      if (!activeSession) return;
+      if (activeSession.isTime) {
+        activeSession.currentReps = Math.max(5, activeSession.currentReps + delta * 5);
+      } else {
+        activeSession.currentReps = Math.max(1, activeSession.currentReps + delta);
+      }
+      renderSessionStep();
+      try { if (navigator.vibrate) navigator.vibrate(15); } catch(e){}
     }
 
     function runStaticTimer() {
       const btn = document.getElementById('sessionActionBtn');
       btn.disabled = true;
-      let timeLeft = activeSession.reps;
+      let timeLeft = activeSession.currentReps;
       document.getElementById('sessionMainValue').innerText = timeLeft;
 
       activeSession.timerInterval = setInterval(() => {
@@ -802,12 +925,18 @@
     }
 
     function completeCurrentSet() {
-      try { if (navigator.vibrate) navigator.vibrate(50); } catch(e){}
+      try { if (navigator.vibrate) navigator.vibrate(40); } catch(e){}
+      
+      // Save actual reps recorded for this set
+      activeSession.actualSets.push(activeSession.currentReps);
+
       if (activeSession.currentSet < activeSession.totalSets) {
         activeSession.currentSet++;
-        startRestPeriod(30);
+        // Reset base reps for next set
+        activeSession.currentReps = activeSession.tierData.reps;
+        startRestPeriod(activeSession.restSeconds);
       } else {
-        finishWorkoutSessionSuccess();
+        showVictoryOverlay();
       }
     }
 
@@ -820,6 +949,7 @@
       let sLeft = seconds;
       document.getElementById('restSeconds').innerText = sLeft;
 
+      if (restTimerInterval) clearInterval(restTimerInterval);
       restTimerInterval = setInterval(() => {
         sLeft--;
         document.getElementById('restSeconds').innerText = sLeft;
@@ -838,38 +968,151 @@
       renderSessionStep();
     }
 
-    async function finishWorkoutSessionSuccess() {
+    function showVictoryOverlay() {
       document.getElementById('workoutOverlay').classList.add('hidden');
       
-      const entry = {
-        timestamp: new Date().toISOString(),
-        date: new Date().toISOString().slice(0, 10),
-        time: new Date().toTimeString().slice(0, 5),
-        exerciseId: activeSession.exercise.id,
-        exerciseName: activeSession.exercise.name,
-        zone: activeSession.exercise.zone,
-        status: 'completed',
-        setsDone: activeSession.totalSets,
-        repsDone: activeSession.reps,
-        reason: '',
-        debtRepaid: accumulatedDebt
-      };
-      await dbAddLog(entry);
+      const isTest = activeSession.isTest;
+      const iconBox = document.getElementById('victoryIconBox');
+      const headTitle = document.getElementById('victoryHeaderTitle');
+      const headSub = document.getElementById('victoryHeaderSubtitle');
+      const footnote = document.getElementById('victoryStatusFootnote');
 
-      accumulatedDebt = 0;
-      currentStreak++;
-      lastDoneTimestamp = new Date().toISOString();
-      await dbSetSetting('accumulatedDebt', 0);
-      await dbSetSetting('streak', currentStreak);
-      await dbSetSetting('lastDoneDate', entry.date);
-      await dbSetSetting('lastDoneTimestamp', lastDoneTimestamp);
+      if (isTest) {
+        iconBox.innerText = '🧪';
+        iconBox.className = 'w-13 h-13 mx-auto rounded-full bg-zinc-900 border border-white/10 flex items-center justify-center text-2xl mb-2.5 text-zinc-300 font-bold';
+        headTitle.innerText = 'Тестовый прогон завершен';
+        headSub.innerText = 'Кнопки и таймеры проверены. Статистика не изменена.';
+        footnote.innerText = 'Тестовый режим • Без списания нормы и стрика';
+        footnote.className = 'text-[11px] text-zinc-400 pt-0.5';
+      } else {
+        iconBox.innerText = '✓';
+        iconBox.className = 'w-13 h-13 mx-auto rounded-full bg-zinc-900 border border-white/10 flex items-center justify-center text-2xl mb-2.5 text-emerald-400 font-bold';
+        headTitle.innerText = 'Норматив выполнен';
+        headSub.innerText = 'Результат подходов готов к записи.';
+        footnote.innerText = 'Долг списан • Прогресс фиксируется';
+        footnote.className = 'text-[11px] text-emerald-400/90 pt-0.5';
+      }
 
-      document.getElementById('victorySummaryText').innerText = `${activeSession.exercise.name}: ${activeSession.totalSets} подходов`;
-      document.getElementById('targetAppBtnText').innerText = targetAppUrl.includes('tg') ? 'Открыть Telegram' : (targetAppUrl.includes('youtube') ? 'Открыть YouTube' : 'Открыть приложение');
+      document.getElementById('victoryExerciseTitle').innerText = activeSession.exercise.name;
+      renderVictorySetsList();
+
       document.getElementById('victoryOverlay').classList.remove('hidden');
+      try { if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 200]); } catch(e){}
+    }
+
+    function renderVictorySetsList() {
+      const container = document.getElementById('victorySetsEditorList');
+      container.innerHTML = '';
+      const sets = activeSession.actualSets;
+
+      sets.forEach((reps, idx) => {
+        const row = document.createElement('div');
+        row.className = 'app-card-inner p-2.5 flex items-center justify-between text-xs';
+        row.innerHTML = `
+          <span class="font-semibold text-zinc-300">Подход ${idx + 1}</span>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="victoryAdjustSetReps(${idx}, -1)" class="w-8 h-8 rounded-lg bg-zinc-800 border border-white/10 text-white font-bold text-sm flex items-center justify-center active:scale-90 select-none transition">–</button>
+            <span class="w-10 text-center font-mono font-bold text-white text-sm">${reps}</span>
+            <button type="button" onclick="victoryAdjustSetReps(${idx}, 1)" class="w-8 h-8 rounded-lg bg-zinc-800 border border-white/10 text-white font-bold text-sm flex items-center justify-center active:scale-90 select-none transition">+</button>
+            <span class="text-[10px] text-zinc-500 w-8 text-right">${activeSession.isTime ? 'сек.' : 'повт.'}</span>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+
+      const totalReps = sets.reduce((sum, val) => sum + val, 0);
+      document.getElementById('victorySetsBadge').innerText = `${sets.length} ${sets.length === 1 ? 'подход' : (sets.length < 5 ? 'подхода' : 'подходов')}`;
+      document.getElementById('victoryTotalRepsCount').innerText = `${totalReps} ${activeSession.isTime ? 'сек.' : 'повт.'}`;
+    }
+
+    function victoryAdjustSetReps(idx, delta) {
+      if (!activeSession || activeSession.actualSets[idx] === undefined) return;
+      if (activeSession.isTime) {
+        activeSession.actualSets[idx] = Math.max(5, activeSession.actualSets[idx] + delta * 5);
+      } else {
+        activeSession.actualSets[idx] = Math.max(1, activeSession.actualSets[idx] + delta);
+      }
+      renderVictorySetsList();
+      try { if (navigator.vibrate) navigator.vibrate(15); } catch(e){}
+    }
+
+    function victoryAddSet() {
+      if (!activeSession) return;
+      const lastReps = activeSession.actualSets[activeSession.actualSets.length - 1] || activeSession.tierData.reps;
+      activeSession.actualSets.push(lastReps);
+      renderVictorySetsList();
+      try { if (navigator.vibrate) navigator.vibrate(25); } catch(e){}
+    }
+
+    function victoryRemoveLastSet() {
+      if (!activeSession || activeSession.actualSets.length <= 1) return;
+      activeSession.actualSets.pop();
+      renderVictorySetsList();
+      try { if (navigator.vibrate) navigator.vibrate(25); } catch(e){}
+    }
+
+    async function confirmAndFinishSession(openTelegram = false) {
+      document.getElementById('victoryOverlay').classList.add('hidden');
+      
+      const sets = [...activeSession.actualSets];
+      const totalReps = sets.reduce((s, r) => s + r, 0);
+      const isTest = activeSession.isTest;
+
+      if (isTest) {
+        const entry = {
+          timestamp: new Date().toISOString(),
+          date: new Date().toISOString().slice(0, 10),
+          time: new Date().toTimeString().slice(0, 5),
+          exerciseId: 'test_system',
+          exerciseName: 'Тестовый прогон (Проверка кнопок)',
+          zone: 'test',
+          status: 'test',
+          isTest: true,
+          setsDone: sets.length,
+          actualSets: sets,
+          repsDone: totalReps,
+          totalReps: totalReps,
+          reason: 'Проверка кнопок'
+        };
+        await dbAddLog(entry);
+      } else {
+        const entry = {
+          timestamp: new Date().toISOString(),
+          date: new Date().toISOString().slice(0, 10),
+          time: new Date().toTimeString().slice(0, 5),
+          exerciseId: activeSession.exercise.id,
+          exerciseName: activeSession.exercise.name,
+          zone: activeSession.exercise.zone,
+          status: 'completed',
+          isTest: false,
+          setsDone: sets.length,
+          actualSets: sets,
+          repsDone: totalReps,
+          totalReps: totalReps,
+          reason: '',
+          debtRepaid: accumulatedDebt
+        };
+        await dbAddLog(entry);
+
+        accumulatedDebt = 0;
+        currentStreak++;
+        lastDoneTimestamp = new Date().toISOString();
+        await dbSetSetting('accumulatedDebt', 0);
+        await dbSetSetting('streak', currentStreak);
+        await dbSetSetting('lastDoneDate', entry.date);
+        await dbSetSetting('lastDoneTimestamp', lastDoneTimestamp);
+      }
 
       refreshDashboard();
-      try { if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 200]); } catch(e){}
+
+      // Copy VGATE_OK pass to clipboard for shortcut
+      try {
+        navigator.clipboard.writeText('VGATE_OK').catch(() => {});
+      } catch (e) {}
+
+      if (openTelegram) {
+        openDeepLink(targetAppUrl);
+      }
     }
 
     function abortWorkoutSession() {
@@ -934,7 +1177,8 @@
         exerciseId: currentActiveExercise ? currentActiveExercise.id : 'test',
         exerciseName: currentActiveExercise ? currentActiveExercise.name : 'V-Gate',
         zone: 'test',
-        status: 'skipped',
+        status: 'test',
+        isTest: true,
         setsDone: 0,
         repsDone: 0,
         reason: 'Тест',
@@ -944,7 +1188,14 @@
       closeSkipModal();
       abortWorkoutSession();
       refreshDashboard();
-      openDeepLink(targetAppUrl);
+
+      try {
+        navigator.clipboard.writeText('VGATE_OK').catch(() => {});
+      } catch (e) {}
+
+      if (!testDayMode) {
+        openDeepLink(targetAppUrl);
+      }
     }
 
     async function submitSkipReason() {
@@ -968,7 +1219,8 @@
         exerciseId: currentActiveExercise ? currentActiveExercise.id : 'unknown',
         exerciseName: currentActiveExercise ? currentActiveExercise.name : 'V-Gate',
         zone: currentActiveExercise ? currentActiveExercise.zone : 'all',
-        status: 'skipped',
+        status: isTest ? 'test' : 'skipped',
+        isTest: isTest,
         setsDone: 0,
         repsDone: 0,
         reason: reasonText,
@@ -981,7 +1233,14 @@
       abortWorkoutSession();
 
       refreshDashboard();
-      openDeepLink(targetAppUrl);
+
+      try {
+        navigator.clipboard.writeText('VGATE_OK').catch(() => {});
+      } catch (e) {}
+
+      if (!testDayMode) {
+        openDeepLink(targetAppUrl);
+      }
     }
 
     // --- TAB SWITCHING ---
@@ -1022,6 +1281,10 @@
       const now = new Date();
       const currentHour = now.getHours();
 
+      // Filter out test entries so they NEVER count towards real daily quota
+      const completedRealLogs = todayLogs.filter(l => l.status === 'completed' && !l.isTest);
+      const doneToday = completedRealLogs.length;
+
       // 1. Ночной режим: с 21:00 вечера до 06:00 утра
       if (currentHour >= NIGHT_START || currentHour < NIGHT_END) {
         return {
@@ -1030,12 +1293,11 @@
           badge: '🌙 НОЧНОЙ РЕЖИМ (ДО 06:00)',
           title: 'Шлагбаум отключён на ночь',
           subtitle: 'Время сна и отдыха. Мышцы восстанавливаются в фазе сна. Доступ к приложениям свободен.',
-          sessionsText: `Сегодня закрыто: ${todayLogs.filter(l => l.status === 'completed').length} из ${DAILY_TARGET}`
+          sessionsText: `Сегодня закрыто: ${doneToday} из ${DAILY_TARGET}`
         };
       }
 
       // 2. Дневная норма закрыта (2 из 2)
-      const doneToday = todayLogs.filter(l => l.status === 'completed').length;
       if (doneToday >= DAILY_TARGET) {
         return {
           isFree: true,
@@ -1088,8 +1350,8 @@
       const logs = await dbGetAllLogs();
       const todayLogs = logs.filter(l => l.date === today);
 
-      const doneCount = todayLogs.filter(l => l.status === 'completed').length;
-      const skipCount = todayLogs.filter(l => l.status === 'skipped').length;
+      const doneCount = todayLogs.filter(l => l.status === 'completed' && !l.isTest).length;
+      const skipCount = todayLogs.filter(l => l.status === 'skipped' && !l.isTest).length;
 
       document.getElementById('metricDoneCount').innerText = `${doneCount} / ${DAILY_TARGET}`;
       document.getElementById('metricSkipCount').innerText = skipCount;
@@ -1115,15 +1377,21 @@
           navigator.clipboard.writeText('VGATE_OK').catch(() => {});
         } catch (e) {}
 
-        // Schedule auto-redirect
-        const notice = document.getElementById('autoRedirectNotice');
-        notice.classList.remove('hidden');
-        document.getElementById('autoRedirectText').innerText = 'Переход в Telegram через 2 сек...';
+        // In testDayMode, DO NOT redirect automatically!
+        if (testDayMode) {
+          cancelAutoRedirect();
+          const notice = document.getElementById('autoRedirectNotice');
+          if (notice) notice.classList.add('hidden');
+        } else {
+          const notice = document.getElementById('autoRedirectNotice');
+          notice.classList.remove('hidden');
+          document.getElementById('autoRedirectText').innerText = 'Переход в Telegram через 2 сек...';
 
-        if (autoRedirectTimeout) clearTimeout(autoRedirectTimeout);
-        autoRedirectTimeout = setTimeout(() => {
-          openDeepLink(targetAppUrl);
-        }, 2000);
+          if (autoRedirectTimeout) clearTimeout(autoRedirectTimeout);
+          autoRedirectTimeout = setTimeout(() => {
+            openDeepLink(targetAppUrl);
+          }, 2000);
+        }
       } else {
         freeCard.classList.add('hidden');
         challengeCard.classList.remove('hidden');
@@ -1150,7 +1418,7 @@
       document.getElementById('mainCardTitle').innerText = currentActiveExercise.name;
       
       let planStr = tierData.label;
-      if (accumulatedDebt > 0) {
+      if (accumulatedDebt > 0 && !currentActiveExercise.isTest) {
         planStr += ` (+${accumulatedDebt} в долг)`;
       }
       document.getElementById('mainCardPlan').innerText = planStr;
@@ -1164,22 +1432,35 @@
       if (logs.length === 0) {
         logContainer.innerHTML = '<div class="app-card p-4 text-center text-xs text-zinc-500">Записей пока нет. Выполни первую сессию выше.</div>';
       } else {
-        logs.slice(-5).reverse().forEach(l => {
+        logs.slice(-6).reverse().forEach(l => {
+          const isTest = l.isTest || l.status === 'test';
           const isDone = l.status === 'completed';
           const card = document.createElement('div');
-          card.className = 'app-card p-3.5 flex items-center justify-between text-xs';
+          card.className = `app-card p-3.5 flex items-center justify-between text-xs ${isTest ? 'border-zinc-800 bg-zinc-900/30' : ''}`;
+          
+          let rightBadge = '';
+          if (isTest) {
+            const setsInfo = (l.actualSets && l.actualSets.length) ? ` (${l.actualSets.join(', ')} повт.)` : (l.setsDone ? ` (${l.setsDone} подх.)` : '');
+            rightBadge = `<span class="px-2 py-0.5 rounded-lg bg-zinc-800 text-zinc-400 font-mono text-[10px]">ТЕСТ${setsInfo}</span>`;
+          } else if (isDone) {
+            const setsInfo = (l.actualSets && l.actualSets.length) ? ` (${l.actualSets.join(', ')} повт.)` : '';
+            rightBadge = `<span class="text-emerald-400 font-mono font-medium">✓ ${l.setsDone} подх.${setsInfo}</span>`;
+          } else {
+            rightBadge = `<span class="text-amber-400 font-mono font-medium">+${l.debtAdded || 1} долг</span>`;
+          }
+
           card.innerHTML = `
             <div class="space-y-0.5">
               <div class="font-semibold text-white flex items-center gap-1.5">
-                <span class="w-1.5 h-1.5 rounded-full ${isDone ? 'bg-emerald-400' : 'bg-amber-400'}"></span>
+                <span class="w-1.5 h-1.5 rounded-full ${isTest ? 'bg-zinc-400' : (isDone ? 'bg-emerald-400' : 'bg-amber-400')}"></span>
                 <span>${escapeHtml(l.exerciseName)}</span>
               </div>
               <div class="text-[11px] text-zinc-500">
-                ${l.date} • ${l.time} ${!isDone && l.reason ? `• «${escapeHtml(l.reason)}»` : ''}
+                ${l.date} • ${l.time} ${isTest ? '• Без зачета' : (!isDone && l.reason ? `• «${escapeHtml(l.reason)}»` : '')}
               </div>
             </div>
-            <div class="text-[11px] font-mono font-medium ${isDone ? 'text-emerald-400' : 'text-amber-400'}">
-              ${isDone ? `✓ ${l.setsDone} подх.` : '+1 долг'}
+            <div>
+              ${rightBadge}
             </div>
           `;
           logContainer.appendChild(card);
@@ -1196,19 +1477,25 @@
       const container = document.getElementById('exercisesContainer');
       container.innerHTML = '';
 
-      const items = filter === 'all' ? EXERCISES_DATA : EXERCISES_DATA.filter(e => e.zone === filter);
+      const items = filter === 'all' 
+        ? EXERCISES_DATA 
+        : (filter === 'test' ? EXERCISES_DATA.filter(e => e.isTest || e.zone === 'test') : EXERCISES_DATA.filter(e => e.zone === filter));
 
       items.forEach(ex => {
+        const isTest = ex.isTest || ex.zone === 'test';
         const tierData = ex.tiers[currentTier];
         const card = document.createElement('div');
-        card.className = 'app-card p-4 space-y-2.5';
+        card.className = `app-card p-4 space-y-2.5 ${isTest ? 'border-zinc-700/60 bg-zinc-900/30' : ''}`;
         card.innerHTML = `
           <div class="flex items-start justify-between">
             <div class="space-y-0.5">
-              <div class="text-xs font-bold text-white">${escapeHtml(ex.name)}</div>
+              <div class="text-xs font-bold text-white flex items-center gap-1.5">
+                ${isTest ? '<span class="text-sm">🧪</span>' : ''}
+                <span>${escapeHtml(ex.name)}</span>
+              </div>
               <div class="text-[10px] text-zinc-500 uppercase font-semibold tracking-wider">${escapeHtml(ex.zoneName)}</div>
             </div>
-            <span class="px-2 py-0.5 rounded-lg bg-zinc-900 border border-white/10 text-zinc-300 text-[10px] font-mono font-medium">
+            <span class="px-2 py-0.5 rounded-lg bg-zinc-900 border border-white/10 ${isTest ? 'text-zinc-400' : 'text-zinc-300'} text-[10px] font-mono font-medium">
               ${tierData.label.split('×')[1] ? tierData.label.split('×')[1].trim() : tierData.label}
             </span>
           </div>
@@ -1217,8 +1504,8 @@
           </p>
           <div class="flex items-center justify-between pt-1">
             <span class="text-[11px] text-zinc-500 font-mono">${tierData.label}</span>
-            <button type="button" onclick="startSingleExercise('${ex.id}')" class="px-3.5 py-1.5 rounded-xl bg-white hover:bg-zinc-200 active:scale-95 text-black font-semibold text-xs transition">
-              Выполнить ➔
+            <button type="button" onclick="startSingleExercise('${ex.id}')" class="px-3.5 py-1.5 rounded-xl ${isTest ? 'bg-zinc-800 hover:bg-zinc-700 text-white border border-white/10' : 'bg-white hover:bg-zinc-200 text-black'} font-semibold text-xs active:scale-95 transition">
+              ${isTest ? 'Проверить ➔' : 'Выполнить ➔'}
             </button>
           </div>
         `;
@@ -1227,13 +1514,13 @@
     }
 
     function filterExercises(zone) {
-      ['filterBtnAll', 'filterBtnChest', 'filterBtnBack', 'filterBtnShoulders', 'filterBtnCore'].forEach(id => {
+      ['filterBtnAll', 'filterBtnTest', 'filterBtnChest', 'filterBtnBack', 'filterBtnShoulders', 'filterBtnCore'].forEach(id => {
         const btn = document.getElementById(id);
         if (btn) {
           btn.className = 'px-3.5 py-1.5 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white font-medium text-xs whitespace-nowrap active:scale-95 transition border border-white/5';
         }
       });
-      const activeId = zone === 'all' ? 'filterBtnAll' : (zone === 'chest' ? 'filterBtnChest' : (zone === 'back' ? 'filterBtnBack' : (zone === 'shoulders' ? 'filterBtnShoulders' : 'filterBtnCore')));
+      const activeId = zone === 'all' ? 'filterBtnAll' : (zone === 'test' ? 'filterBtnTest' : (zone === 'chest' ? 'filterBtnChest' : (zone === 'back' ? 'filterBtnBack' : (zone === 'shoulders' ? 'filterBtnShoulders' : 'filterBtnCore'))));
       const activeBtn = document.getElementById(activeId);
       if (activeBtn) activeBtn.className = 'px-3.5 py-1.5 rounded-xl bg-white text-black font-semibold text-xs whitespace-nowrap active:scale-95 transition';
 
@@ -1341,6 +1628,15 @@
       currentStreak = await dbGetSetting('streak', 0);
       accumulatedDebt = await dbGetSetting('accumulatedDebt', 0);
       lastDoneTimestamp = await dbGetSetting('lastDoneTimestamp', null);
+      testDayMode = await dbGetSetting('testDayMode', true); // По умолчанию ВКЛЮЧЕН на сегодня
+
+      const toggleInput = document.getElementById('toggleTestDayInput');
+      if (toggleInput) toggleInput.checked = testDayMode;
+      const banner = document.getElementById('testDayBanner');
+      if (banner) {
+        if (testDayMode) banner.classList.remove('hidden');
+        else banner.classList.add('hidden');
+      }
 
       const options = { weekday: 'long', day: 'numeric', month: 'long' };
       document.getElementById('headerDateStr').innerText = new Intl.DateTimeFormat('ru-RU', options).format(new Date());
