@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vgate-pwa-v1';
+const CACHE_NAME = 'vgate-pwa-v2';
 const ASSETS = [
   './',
   './index.html',

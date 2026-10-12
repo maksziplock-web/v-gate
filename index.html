@@ -369,14 +369,14 @@
 
           <div onclick="switchTab('exercises'); filterExercises('chest')" class="p-3.5 rounded-2xl glass-card hover:border-emerald-500/40 active:scale-98 transition space-y-1">
             <div class="text-xl">💎</div>
-            <div class="text-xs font-bold text-white">Центр груди</div>
-            <div class="text-[10px] text-zinc-500">Алмазные и сжатия</div>
+            <div class="text-xs font-bold text-white">Центр и верх груди</div>
+            <div class="text-[10px] text-zinc-500">Алмазные и ноги на диване</div>
           </div>
 
           <div onclick="switchTab('exercises'); filterExercises('shoulders')" class="p-3.5 rounded-2xl glass-card hover:border-emerald-500/40 active:scale-98 transition space-y-1">
             <div class="text-xl">⚡️</div>
-            <div class="text-xs font-bold text-white">Плечи и руки</div>
-            <div class="text-[10px] text-zinc-500">Дельты и трицепс</div>
+            <div class="text-xs font-bold text-white">Плечи и дельты</div>
+            <div class="text-[10px] text-zinc-500">Ширина плеч (без трицепса)</div>
           </div>
 
           <div onclick="switchTab('exercises'); filterExercises('core')" class="p-3.5 rounded-2xl glass-card hover:border-emerald-500/40 active:scale-98 transition space-y-1">
@@ -448,10 +448,10 @@
           Спина (3)
         </button>
         <button type="button" onclick="filterExercises('chest')" id="filterBtnChest" class="px-3 py-1.5 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white font-medium text-xs whitespace-nowrap active:scale-95 transition border border-white/5">
-          Грудь (3)
+          Центр и верх (3)
         </button>
         <button type="button" onclick="filterExercises('shoulders')" id="filterBtnShoulders" class="px-3 py-1.5 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white font-medium text-xs whitespace-nowrap active:scale-95 transition border border-white/5">
-          Плечи и руки (3)
+          Плечи и дельты (3)
         </button>
         <button type="button" onclick="filterExercises('core')" id="filterBtnCore" class="px-3 py-1.5 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white font-medium text-xs whitespace-nowrap active:scale-95 transition border border-white/5">
           Вакуум и пресс (3)
@@ -628,14 +628,14 @@
         }
       },
 
-      // Зона 2: Центр груди
+      // Зона 2: Центр и верх груди (трицепс и низ груди исключены)
       {
         id: 'chest_diamond',
         zone: 'chest',
         zoneName: 'Центр груди',
-        name: 'Алмазные отжимания',
+        name: 'Алмазные отжимания на центр',
         icon: '💎',
-        cue: 'Большие и указательные пальцы вместе («алмаз»). Локти под 45° к телу. Пиковое сжатие груди вверху.',
+        cue: 'Пальцы домиком под центром грудины. Локти под 45°. Вверху НЕ блокируйте локти (не отдавайте вес трицепсу!), а прожимайте центр груди волевым сжатием на 1 сек.',
         tiers: {
           1: { sets: 3, reps: 8, isTime: false, label: '3 подхода × 8 повторений' },
           2: { sets: 3, reps: 12, isTime: false, label: '3 подхода × 12 повторений' },
@@ -643,25 +643,25 @@
         }
       },
       {
-        id: 'chest_pause',
+        id: 'chest_decline',
         zone: 'chest',
-        zoneName: 'Центр груди',
-        name: 'Отжимания с паузой внизу',
-        icon: '⏱️',
-        cue: 'Опускайтесь 3 секунды, задержитесь на 2 см от пола на 2 секунды, мощно выжмите себя вверх.',
+        zoneName: 'Верх груди (ключичный пучок)',
+        name: 'Отжимания с ногами на диване',
+        icon: '🏔️',
+        cue: 'Носки на диване/стуле, руки на полу чуть шире плеч. Наклон корпуса 35° смещает 100% нагрузки на верхний ключичный пучок груди. Низ груди полностью отключен.',
         tiers: {
-          1: { sets: 3, reps: 10, isTime: false, label: '3 подхода × 10 повторений' },
-          2: { sets: 3, reps: 14, isTime: false, label: '3 подхода × 14 повторений' },
-          3: { sets: 4, reps: 16, isTime: false, label: '4 подхода × 16 повторений' }
+          1: { sets: 3, reps: 8, isTime: false, label: '3 подхода × 8 повторений' },
+          2: { sets: 3, reps: 12, isTime: false, label: '3 подхода × 12 повторений' },
+          3: { sets: 4, reps: 15, isTime: false, label: '4 подхода × 15 повторений' }
         }
       },
       {
         id: 'chest_prayer',
         zone: 'chest',
-        zoneName: 'Центр груди',
-        name: 'Изометрическое сжатие ладоней',
+        zoneName: 'Центр груди (изоляция)',
+        name: 'Сжатие ладоней у грудины («Молитва»)',
         icon: '🙏',
-        cue: 'Ладони перед грудью. С максимальной силой давите ладонями друг на друга, прожимая грудные мышцы.',
+        cue: 'Ладони на уровне солнечного сплетения (низ рёбер). Изо всех сил давите ладонями внутрь и вниз, соединяя грудные мышцы к центру. Трицепс выключен на 100%.',
         tiers: {
           1: { sets: 3, reps: 20, isTime: true, label: '3 подхода × 20 секунд' },
           2: { sets: 4, reps: 25, isTime: true, label: '4 подхода × 25 секунд' },
@@ -669,14 +669,14 @@
         }
       },
 
-      // Зона 3: Плечи и руки
+      // Зона 3: Плечи и дельты (исключен трицепс)
       {
         id: 'shoulders_pike',
         zone: 'shoulders',
-        zoneName: 'Плечи и руки',
+        zoneName: 'Плечи и верх груди',
         name: 'Отжимания уголком (Pike)',
-        icon: '🏔️',
-        cue: 'Таз поднят вверх углом. Опускайтесь головой вперед по траектории треугольника к полу.',
+        icon: '🔺',
+        cue: 'Таз поднят вверх углом. Опускайтесь головой вперед к полу по траектории треугольника. Включает переднюю/среднюю дельту и стыкуется с верхом груди.',
         tiers: {
           1: { sets: 3, reps: 8, isTime: false, label: '3 подхода × 8 повторений' },
           2: { sets: 3, reps: 12, isTime: false, label: '3 подхода × 12 повторений' },
@@ -686,10 +686,10 @@
       {
         id: 'shoulders_taps',
         zone: 'shoulders',
-        zoneName: 'Плечи и руки',
+        zoneName: 'Плечи и баланс',
         name: 'Планка с касанием плеч',
         icon: '✋',
-        cue: 'Планка на прямых руках. Поочередно касайтесь противоположного плеча, удерживая таз неподвижным.',
+        cue: 'Планка на прямых руках. Поочередно касайтесь противоположного плеча, удерживая таз неподвижным. Стабилизирует плечевой пояс без нагрузки на трицепс.',
         tiers: {
           1: { sets: 3, reps: 16, isTime: false, label: '3 подхода × 16 касаний' },
           2: { sets: 3, reps: 24, isTime: false, label: '3 подхода × 24 касания' },
@@ -697,16 +697,16 @@
         }
       },
       {
-        id: 'shoulders_triceps',
+        id: 'shoulders_tplank',
         zone: 'shoulders',
-        zoneName: 'Плечи и руки',
-        name: 'Отжимания узким хватом',
-        icon: '💪',
-        cue: 'Руки на ширине плеч, локти скользят строго вдоль ребер назад. Фокус на трицепс.',
+        zoneName: 'Плечи (средняя дельта)',
+        name: 'Т-планка на ширину плеч',
+        icon: '🦅',
+        cue: 'Из упора лежа разворачивайте корпус боком, поднимая прямую руку строго вверх в Т-форму с фиксацией на 1 сек. Нагружает среднюю дельту для V-силуэта без трицепса.',
         tiers: {
-          1: { sets: 3, reps: 10, isTime: false, label: '3 подхода × 10 повторений' },
-          2: { sets: 3, reps: 14, isTime: false, label: '3 подхода × 14 повторений' },
-          3: { sets: 4, reps: 18, isTime: false, label: '4 подхода × 18 повторений' }
+          1: { sets: 3, reps: 12, isTime: false, label: '3 подхода × 12 разворотов' },
+          2: { sets: 3, reps: 16, isTime: false, label: '3 подхода × 16 разворотов' },
+          3: { sets: 4, reps: 20, isTime: false, label: '4 подхода × 20 разворотов' }
         }
       },
 
