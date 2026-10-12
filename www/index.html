@@ -171,8 +171,8 @@
   <!-- ========================================== -->
   <!-- 3. SKIP REASON MODAL BOTTOM SHEET -->
   <!-- ========================================== -->
-  <div id="skipModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex flex-col justify-end hidden">
-    <div class="app-card p-6 space-y-4 rounded-t-3xl border-b-0 max-h-[85vh] overflow-y-auto safe-bottom">
+  <div id="skipModal" class="fixed inset-0 z-[90] bg-black/80 backdrop-blur-md flex flex-col justify-end hidden">
+    <div class="app-card p-6 space-y-3.5 rounded-t-3xl border-b-0 max-h-[90vh] overflow-y-auto safe-bottom">
       <div class="flex items-center justify-between">
         <div>
           <h3 class="text-base font-bold text-white">Причина пропуска</h3>
@@ -183,20 +183,36 @@
         </button>
       </div>
 
-      <div class="space-y-2 pt-1">
-        <textarea id="skipReasonInput" rows="3" placeholder="Например: на работе, не дома, сильно устал..." class="w-full p-3.5 rounded-2xl bg-zinc-900 border border-white/10 text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-white/30"></textarea>
+      <!-- Quick Chips -->
+      <div class="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+        <button type="button" onclick="quickFillReason('Тест')" class="px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold text-xs whitespace-nowrap active:scale-95 transition">
+          ⚡️ Тест (без долга)
+        </button>
+        <button type="button" onclick="quickFillReason('На работе')" class="px-3 py-1.5 rounded-xl bg-zinc-900 border border-white/10 text-zinc-300 text-xs whitespace-nowrap active:scale-95 transition">
+          На работе
+        </button>
+        <button type="button" onclick="quickFillReason('Не дома')" class="px-3 py-1.5 rounded-xl bg-zinc-900 border border-white/10 text-zinc-300 text-xs whitespace-nowrap active:scale-95 transition">
+          Не дома
+        </button>
+        <button type="button" onclick="quickFillReason('Устал')" class="px-3 py-1.5 rounded-xl bg-zinc-900 border border-white/10 text-zinc-300 text-xs whitespace-nowrap active:scale-95 transition">
+          Устал
+        </button>
       </div>
 
-      <div class="p-3.5 rounded-xl bg-zinc-900 border border-white/5 text-xs text-zinc-400 leading-relaxed">
-        К нормативу на завтра будет добавлен <span class="text-amber-400 font-semibold">+1 штрафной подход</span> в долг.
+      <div class="space-y-1.5">
+        <textarea id="skipReasonInput" rows="2" placeholder="Например: на работе, не дома, сильно устал..." class="w-full p-3.5 rounded-2xl bg-zinc-900 border border-white/10 text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-white/30"></textarea>
+      </div>
+
+      <div class="p-3 rounded-xl bg-zinc-900 border border-white/5 text-[11px] text-zinc-400 leading-relaxed">
+        К нормативу на завтра будет добавлен <span class="text-amber-400 font-semibold">+1 штрафной подход</span> в долг (за причину «Тест» штраф не начисляется).
       </div>
 
       <div class="space-y-2 pt-1">
         <button type="button" onclick="submitSkipReason()" class="w-full py-3.5 px-4 rounded-2xl bg-white hover:bg-zinc-200 active:scale-98 text-black font-bold text-sm transition">
-          Зафиксировать пропуск и открыть доступ
+          Зафиксировать пропуск и открыть Telegram
         </button>
-        <button type="button" onclick="closeSkipModal()" class="w-full py-2.5 text-xs text-zinc-500 hover:text-zinc-400">
-          Отмена
+        <button type="button" onclick="quickTestPass()" class="w-full py-2.5 rounded-xl bg-zinc-900 border border-white/10 text-xs text-emerald-400 font-semibold active:scale-95 transition">
+          ⚡️ Быстрый тест без долга (сразу в Telegram)
         </button>
       </div>
     </div>
@@ -267,9 +283,14 @@
           <button type="button" onclick="startWorkoutSession()" class="w-full py-4 px-5 rounded-2xl bg-white hover:bg-zinc-200 active:scale-98 text-black font-bold text-sm transition">
             Начать выполнение
           </button>
-          <button type="button" onclick="openSkipModal()" class="w-full py-2.5 text-center text-xs text-zinc-500 hover:text-zinc-400 active:scale-95 transition">
-            Пропустить сегодня (с фиксацией причины)
-          </button>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" onclick="openSkipModal()" class="py-3 px-3 rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-300 font-semibold text-xs active:scale-98 transition text-center">
+              Пропустить (с причиной)
+            </button>
+            <button type="button" onclick="quickTestPass()" class="py-3 px-3 rounded-2xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 font-bold text-xs active:scale-98 transition text-center flex items-center justify-center gap-1">
+              <span>⚡️</span> <span>Тест (вход в ТГ)</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -336,20 +357,17 @@
     <!-- ==================== TAB 3: SETTINGS (НАСТРОЙКИ) ==================== -->
     <section id="tabSettings" class="space-y-3.5 hidden">
       
-      <!-- Difficulty Segmented Control -->
-      <div class="app-card p-4 space-y-2.5">
-        <div class="text-xs font-semibold text-white">Уровень нагрузки</div>
-        <div class="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-zinc-900 border border-white/5">
-          <button type="button" onclick="setTier(1)" id="tierBtn1" class="py-2 rounded-lg text-xs font-medium text-zinc-400 transition">
-            Новичок
-          </button>
-          <button type="button" onclick="setTier(2)" id="tierBtn2" class="py-2 rounded-lg text-xs font-semibold bg-white text-black transition">
-            Атлет
-          </button>
-          <button type="button" onclick="setTier(3)" id="tierBtn3" class="py-2 rounded-lg text-xs font-medium text-zinc-400 transition">
-            Зверь
-          </button>
+      <!-- Locked Difficulty Info -->
+      <div class="app-card p-4 space-y-2">
+        <div class="flex items-center justify-between">
+          <div class="text-xs font-semibold text-white">Уровень нагрузки</div>
+          <span class="px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold font-mono">
+            АТЛЕТ (ЗАФИКСИРОВАН)
+          </span>
         </div>
+        <p class="text-xs text-zinc-400 leading-relaxed">
+          Программа рассчитана под твои 25 базовых отжиманий. Понижение нагрузки заблокировано, чтобы исключить поблажки и сохранять темп.
+        </p>
       </div>
 
 
@@ -816,13 +834,27 @@
       document.getElementById('victoryOverlay').classList.add('hidden');
     }
 
-    function proceedToTargetApp() {
+    function openDeepLink(url) {
       try {
         navigator.clipboard.writeText('VGATE_OK').catch(() => {});
       } catch (e) {}
+
       setTimeout(() => {
-        window.location.href = targetAppUrl;
+        try {
+          const a = document.createElement('a');
+          a.href = url;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        } catch (e) {}
+        try {
+          window.location.href = url;
+        } catch (e) {}
       }, 80);
+    }
+
+    function proceedToTargetApp() {
+      openDeepLink(targetAppUrl);
     }
 
     // --- SKIP MODAL & DEBT ---
@@ -835,15 +867,48 @@
       document.getElementById('skipModal').classList.add('hidden');
     }
 
+    function quickFillReason(reason) {
+      const input = document.getElementById('skipReasonInput');
+      input.value = reason;
+      if (reason === 'Тест') {
+        quickTestPass();
+      }
+    }
+
+    async function quickTestPass() {
+      const entry = {
+        timestamp: new Date().toISOString(),
+        date: new Date().toISOString().slice(0, 10),
+        time: new Date().toTimeString().slice(0, 5),
+        exerciseId: currentActiveExercise ? currentActiveExercise.id : 'test',
+        exerciseName: currentActiveExercise ? currentActiveExercise.name : 'V-Gate',
+        zone: 'test',
+        status: 'skipped',
+        setsDone: 0,
+        repsDone: 0,
+        reason: 'Тест',
+        debtAdded: 0
+      };
+      await dbAddLog(entry);
+      closeSkipModal();
+      abortWorkoutSession();
+      refreshDashboard();
+      openDeepLink(targetAppUrl);
+    }
+
     async function submitSkipReason() {
       const reasonText = document.getElementById('skipReasonInput').value.trim();
       if (!reasonText) {
-        alert('Пожалуйста, укажи причину');
+        alert('Пожалуйста, укажи причину пропуска');
         return;
       }
 
-      accumulatedDebt += 1;
-      await dbSetSetting('accumulatedDebt', accumulatedDebt);
+      const isTest = reasonText.toLowerCase() === 'тест';
+      const debtAdd = isTest ? 0 : 1;
+      if (debtAdd > 0) {
+        accumulatedDebt += debtAdd;
+        await dbSetSetting('accumulatedDebt', accumulatedDebt);
+      }
 
       const entry = {
         timestamp: new Date().toISOString(),
@@ -856,7 +921,7 @@
         setsDone: 0,
         repsDone: 0,
         reason: reasonText,
-        debtAdded: 1
+        debtAdded: debtAdd
       };
       await dbAddLog(entry);
 
@@ -865,12 +930,7 @@
       abortWorkoutSession();
 
       refreshDashboard();
-      try {
-        navigator.clipboard.writeText('VGATE_OK').catch(() => {});
-      } catch (e) {}
-      setTimeout(() => {
-        window.location.href = targetAppUrl;
-      }, 80);
+      openDeepLink(targetAppUrl);
     }
 
     // --- TAB SWITCHING ---
@@ -1030,16 +1090,8 @@
 
     // --- SETTINGS CONTROLS ---
     async function setTier(t) {
-      currentTier = t;
-      await dbSetSetting('currentTier', t);
-      [1, 2, 3].forEach(n => {
-        const btn = document.getElementById(`tierBtn${n}`);
-        if (n === t) {
-          btn.className = 'py-2 rounded-lg text-xs font-semibold bg-white text-black transition';
-        } else {
-          btn.className = 'py-2 rounded-lg text-xs font-medium text-zinc-400 transition';
-        }
-      });
+      currentTier = 2; // Зафиксировано на уровне Атлет
+      await dbSetSetting('currentTier', 2);
       renderExercisesList('all');
       refreshDashboard();
     }
