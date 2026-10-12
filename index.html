@@ -250,8 +250,50 @@
         </span>
       </div>
 
+      <!-- Free Access / Rest Shield Card (Shown when quota full, cooldown, or night) -->
+      <div id="freeAccessCard" class="hidden app-card p-5 space-y-4 border-emerald-500/20 bg-emerald-500/[0.03]">
+        <div class="flex items-center justify-between">
+          <span id="freeAccessBadge" class="text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+            🟢 СВОБОДНЫЙ ДОСТУП
+          </span>
+          <span id="freeAccessSessionsLabel" class="text-xs font-medium text-zinc-400">
+            Сегодня: 0 из 2
+          </span>
+        </div>
+
+        <div class="space-y-1">
+          <h2 id="freeAccessTitle" class="text-xl font-bold tracking-tight text-white">
+            Отдых между сессиями
+          </h2>
+          <p id="freeAccessSubtitle" class="text-xs text-zinc-400 leading-relaxed">
+            Мышцы восстанавливаются. Следующая сессия откроется через 4 часа.
+          </p>
+        </div>
+
+        <!-- Auto Redirect Notice -->
+        <div id="autoRedirectNotice" class="app-card-inner p-3 flex items-center justify-between text-xs text-zinc-400">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span id="autoRedirectText">Переход в Telegram через 2 сек...</span>
+          </div>
+          <button type="button" onclick="cancelAutoRedirect()" class="text-[11px] font-semibold text-zinc-300 hover:text-white underline">
+            Остаться
+          </button>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="space-y-2 pt-1">
+          <button type="button" onclick="proceedToTargetApp()" class="w-full py-4 px-5 rounded-2xl bg-white hover:bg-zinc-200 active:scale-98 text-black font-bold text-sm transition">
+            Открыть Telegram
+          </button>
+          <button type="button" onclick="startWorkoutSession()" class="w-full py-3 px-4 rounded-2xl bg-zinc-900 border border-white/10 text-zinc-300 font-semibold text-xs active:scale-95 transition text-center">
+            + Выполнить тренировку вне очереди
+          </button>
+        </div>
+      </div>
+
       <!-- Central Exercise Challenge Card -->
-      <div class="app-card p-5 space-y-4">
+      <div id="exerciseChallengeCard" class="app-card p-5 space-y-4">
         <div class="flex items-center justify-between">
           <span id="mainCardZone" class="text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-lg bg-zinc-900 border border-white/10 text-zinc-300">
             ВЕРХ ГРУДИ
@@ -297,8 +339,8 @@
       <!-- Quick Metrics Row -->
       <div class="grid grid-cols-3 gap-2">
         <div class="app-card p-3 text-center">
-          <div class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Сегодня</div>
-          <div id="metricDoneCount" class="text-lg font-bold text-white mt-0.5">0</div>
+          <div class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Норма дня</div>
+          <div id="metricDoneCount" class="text-lg font-bold text-white mt-0.5">0 / 2</div>
         </div>
         <div class="app-card p-3 text-center">
           <div class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Пропуски</div>
@@ -652,11 +694,18 @@
       });
     }
 
-    // --- APP STATE ---
-    let currentTier = 2; // 1: Новичок, 2: Атлет, 3: Зверь
+    // --- GATE CONSTANTS & STATE ---
+    const DAILY_TARGET = 2; // Дневная норма: 2 сессии
+    const COOLDOWN_HOURS = 4; // 4 часа отдыха между сессиями
+    const NIGHT_START = 21; // 21:00 вечера
+    const NIGHT_END = 6; // 06:00 утра
+
+    let currentTier = 2; // Атлет (зафиксирован)
     let targetAppUrl = 'tg://';
     let currentStreak = 0;
     let accumulatedDebt = 0;
+    let lastDoneTimestamp = null;
+    let autoRedirectTimeout = null;
     let currentActiveExercise = null;
     let activeSession = null;
     let restTimerInterval = null;
@@ -809,9 +858,11 @@
 
       accumulatedDebt = 0;
       currentStreak++;
+      lastDoneTimestamp = new Date().toISOString();
       await dbSetSetting('accumulatedDebt', 0);
       await dbSetSetting('streak', currentStreak);
       await dbSetSetting('lastDoneDate', entry.date);
+      await dbSetSetting('lastDoneTimestamp', lastDoneTimestamp);
 
       document.getElementById('victorySummaryText').innerText = `${activeSession.exercise.name}: ${activeSession.totalSets} подходов`;
       document.getElementById('targetAppBtnText').innerText = targetAppUrl.includes('tg') ? 'Открыть Telegram' : (targetAppUrl.includes('youtube') ? 'Открыть YouTube' : 'Открыть приложение');
@@ -935,6 +986,7 @@
 
     // --- TAB SWITCHING ---
     function switchTab(tab) {
+      if (tab !== 'workout') cancelAutoRedirect();
       document.getElementById('tabWorkout').classList.add('hidden');
       document.getElementById('tabExercises').classList.add('hidden');
       document.getElementById('tabSettings').classList.add('hidden');
@@ -957,6 +1009,79 @@
       }
     }
 
+    function cancelAutoRedirect() {
+      if (autoRedirectTimeout) {
+        clearTimeout(autoRedirectTimeout);
+        autoRedirectTimeout = null;
+      }
+      const notice = document.getElementById('autoRedirectNotice');
+      if (notice) notice.classList.add('hidden');
+    }
+
+    function evaluateGateStatus(todayLogs, lastDoneTs) {
+      const now = new Date();
+      const currentHour = now.getHours();
+
+      // 1. Ночной режим: с 21:00 вечера до 06:00 утра
+      if (currentHour >= NIGHT_START || currentHour < NIGHT_END) {
+        return {
+          isFree: true,
+          mode: 'night',
+          badge: '🌙 НОЧНОЙ РЕЖИМ (ДО 06:00)',
+          title: 'Шлагбаум отключён на ночь',
+          subtitle: 'Время сна и отдыха. Мышцы восстанавливаются в фазе сна. Доступ к приложениям свободен.',
+          sessionsText: `Сегодня закрыто: ${todayLogs.filter(l => l.status === 'completed').length} из ${DAILY_TARGET}`
+        };
+      }
+
+      // 2. Дневная норма закрыта (2 из 2)
+      const doneToday = todayLogs.filter(l => l.status === 'completed').length;
+      if (doneToday >= DAILY_TARGET) {
+        return {
+          isFree: true,
+          mode: 'quota_full',
+          badge: '🟢 ДНЕВНАЯ НОРМА ВЫПОЛНЕНА',
+          title: `Норма дня закрыта (${doneToday} из ${DAILY_TARGET})`,
+          subtitle: 'Все 6 рабочих подходов на сегодня закрыты! Доступ свободен до следующего утра.',
+          sessionsText: `Норма дня: ${doneToday} из ${DAILY_TARGET} закрыта`
+        };
+      }
+
+      // 3. Кулдаун после предыдущей сессии (4 часа)
+      if (lastDoneTs) {
+        const lastDate = new Date(lastDoneTs);
+        const isToday = lastDate.toISOString().slice(0, 10) === now.toISOString().slice(0, 10);
+        if (isToday) {
+          const diffMs = now.getTime() - lastDate.getTime();
+          const cooldownMs = COOLDOWN_HOURS * 60 * 60 * 1000;
+          if (diffMs < cooldownMs) {
+            const remainingMs = cooldownMs - diffMs;
+            const hoursLeft = Math.floor(remainingMs / (60 * 60 * 1000));
+            const minsLeft = Math.floor((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
+            const timeLeftStr = hoursLeft > 0 ? `${hoursLeft} ч ${minsLeft} мин` : `${minsLeft} мин`;
+            return {
+              isFree: true,
+              mode: 'cooldown',
+              badge: `⏳ ОТДЫХ: ЕЩЁ ${timeLeftStr.toUpperCase()}`,
+              title: `Сессия ${doneToday} из ${DAILY_TARGET} закрыта`,
+              subtitle: `Мышцы отдыхают перед следующим блоком. Следующий подход откроется через ${timeLeftStr}.`,
+              sessionsText: `Прогресс дня: ${doneToday} из ${DAILY_TARGET}`
+            };
+          }
+        }
+      }
+
+      // 4. Шлагбаум активен: тренировка требуется прямо сейчас
+      return {
+        isFree: false,
+        mode: 'gate_required',
+        badge: `⚠️ СЕССИЯ ${doneToday + 1} ИЗ ${DAILY_TARGET}`,
+        title: 'Шлагбаум активен',
+        subtitle: 'Выполни норматив для открытия доступа',
+        sessionsText: `Осталось: ${DAILY_TARGET - doneToday} сессии(й)`
+      };
+    }
+
     // --- DASHBOARD REFRESH ---
     async function refreshDashboard() {
       const today = new Date().toISOString().slice(0, 10);
@@ -966,10 +1091,44 @@
       const doneCount = todayLogs.filter(l => l.status === 'completed').length;
       const skipCount = todayLogs.filter(l => l.status === 'skipped').length;
 
-      document.getElementById('metricDoneCount').innerText = doneCount;
+      document.getElementById('metricDoneCount').innerText = `${doneCount} / ${DAILY_TARGET}`;
       document.getElementById('metricSkipCount').innerText = skipCount;
       document.getElementById('metricDebtCount').innerText = accumulatedDebt;
       document.getElementById('headerStreakCount').innerText = `${currentStreak} дн.`;
+
+      // Evaluate Gate Access Status
+      const gateStatus = evaluateGateStatus(todayLogs, lastDoneTimestamp);
+      const freeCard = document.getElementById('freeAccessCard');
+      const challengeCard = document.getElementById('exerciseChallengeCard');
+
+      if (gateStatus.isFree) {
+        freeCard.classList.remove('hidden');
+        challengeCard.classList.add('hidden');
+
+        document.getElementById('freeAccessBadge').innerText = gateStatus.badge;
+        document.getElementById('freeAccessTitle').innerText = gateStatus.title;
+        document.getElementById('freeAccessSubtitle').innerText = gateStatus.subtitle;
+        document.getElementById('freeAccessSessionsLabel').innerText = gateStatus.sessionsText;
+
+        // Auto copy pass to clipboard
+        try {
+          navigator.clipboard.writeText('VGATE_OK').catch(() => {});
+        } catch (e) {}
+
+        // Schedule auto-redirect
+        const notice = document.getElementById('autoRedirectNotice');
+        notice.classList.remove('hidden');
+        document.getElementById('autoRedirectText').innerText = 'Переход в Telegram через 2 сек...';
+
+        if (autoRedirectTimeout) clearTimeout(autoRedirectTimeout);
+        autoRedirectTimeout = setTimeout(() => {
+          openDeepLink(targetAppUrl);
+        }, 2000);
+      } else {
+        freeCard.classList.add('hidden');
+        challengeCard.classList.remove('hidden');
+        cancelAutoRedirect();
+      }
 
       // Debt card state
       const debtCard = document.getElementById('debtCard');
@@ -1130,6 +1289,7 @@
         streak: currentStreak,
         debt: accumulatedDebt,
         tier: currentTier,
+        lastDoneTimestamp: lastDoneTimestamp,
         logs: logs
       };
       const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
@@ -1159,6 +1319,10 @@
           accumulatedDebt = data.debt;
           await dbSetSetting('accumulatedDebt', accumulatedDebt);
         }
+        if (data.lastDoneTimestamp) {
+          lastDoneTimestamp = data.lastDoneTimestamp;
+          await dbSetSetting('lastDoneTimestamp', lastDoneTimestamp);
+        }
         alert('Данные успешно импортированы');
         refreshDashboard();
       } catch (e) {
@@ -1172,10 +1336,11 @@
     window.addEventListener('DOMContentLoaded', async () => {
       await initDB();
 
-      currentTier = await dbGetSetting('currentTier', 2);
+      currentTier = 2; // Зафиксировано на уровне Атлет
       targetAppUrl = await dbGetSetting('targetAppUrl', 'tg://');
       currentStreak = await dbGetSetting('streak', 0);
       accumulatedDebt = await dbGetSetting('accumulatedDebt', 0);
+      lastDoneTimestamp = await dbGetSetting('lastDoneTimestamp', null);
 
       const options = { weekday: 'long', day: 'numeric', month: 'long' };
       document.getElementById('headerDateStr').innerText = new Intl.DateTimeFormat('ru-RU', options).format(new Date());
