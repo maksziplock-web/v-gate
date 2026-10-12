@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="V-Gate">
+  <meta name="theme-color" content="#000000">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="manifest" href="manifest.json">
+  <title>V-Gate</title>
+  <script src="tailwind.min.js"></script>
+  <style>
+    *, *::before, *::after {
+      -webkit-touch-callout: none !important;
+      -webkit-user-select: none !important;
+      user-select: none !important;
+      -webkit-tap-highlight-color: transparent !important;
+    }
+    input, textarea {
+      -webkit-touch-callout: default !important;
+      -webkit-user-select: text !important;
+      user-select: text !important;
+    }
+    button, [role="button"], a {
+      cursor: pointer !important;
+      touch-action: manipulation !important;
+      -webkit-tap-highlight-color: transparent !important;
+      pointer-events: auto !important;
+    }
+    body {
+      background-color: #000000 !important;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif !important;
+      color: #ffffff;
+      padding-top: calc(env(safe-area-inset-top, 44px));
+      padding-bottom: calc(env(safe-area-inset-bottom, 24px) + 84px);
+      overflow-x: hidden;
+    }
+    .safe-top { padding-top: max(env(safe-area-inset-top, 44px), 20px); }
+    .safe-bottom { padding-bottom: max(env(safe-area-inset-bottom, 24px), 20px); }
+    
+    /* Titanium / Apple Dark Card Aesthetic */
+    .app-card {
+      background: #141416;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 22px;
+    }
+    .app-card-inner {
+      background: #1c1c1f;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+    }
+    .app-tab-active {
+      color: #ffffff !important;
+    }
+    .app-tab-active svg {
+      color: #ffffff !important;
+      transform: scale(1.05);
+    }
+    * {
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
+    }
+    *::-webkit-scrollbar {
+      display: none !important;
+    }
+  </style>
+</head>
+<body class="bg-black text-white min-h-screen select-none antialiased">
+
+  <!-- ========================================== -->
+  <!-- 1. FULLSCREEN GATE / WORKOUT INTERACTIVE SESSION -->
+  <!-- ========================================== -->
+  <div id="workoutOverlay" class="fixed inset-0 z-50 bg-black flex flex-col justify-between p-6 hidden safe-top safe-bottom">
+    <!-- Top Action Bar -->
+    <div class="flex items-center justify-between">
+      <button type="button" onclick="abortWorkoutSession()" class="h-9 px-3.5 rounded-xl bg-zinc-900 border border-white/10 text-xs font-medium text-zinc-400 active:scale-95 transition">
+        ✕ Закрыть
+      </button>
+      <div id="sessionProgressLabel" class="text-xs font-semibold text-zinc-400 tracking-wider uppercase">
+        Подход 1 из 3
+      </div>
+      <div class="w-16 text-right">
+        <span id="sessionZoneLabel" class="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Грудь</span>
+      </div>
+    </div>
+
+    <!-- Active Set Counter Mode -->
+    <div id="setCounterBox" class="my-auto text-center space-y-6">
+      <div class="space-y-1.5 px-4">
+        <h2 id="sessionExTitle" class="text-2xl font-bold tracking-tight text-white">Отжимания с ногами на диване</h2>
+        <p id="sessionExCue" class="text-xs text-zinc-400 max-w-xs mx-auto leading-relaxed">
+          Акцент на верхний ключичный пучок груди. Без включения трицепса.
+        </p>
+      </div>
+
+      <!-- Giant Clean Number -->
+      <div class="py-4">
+        <div id="sessionMainValue" class="text-7xl font-extrabold tracking-tighter text-white font-mono">
+          12
+        </div>
+        <div id="sessionUnitLabel" class="text-xs font-medium text-zinc-500 uppercase tracking-widest mt-2">
+          повторений
+        </div>
+      </div>
+
+      <!-- Clean Set Dots -->
+      <div id="sessionDotsContainer" class="flex items-center justify-center gap-2">
+        <!-- populated by JS -->
+      </div>
+    </div>
+
+    <!-- Rest Timer Mode (between sets) -->
+    <div id="restTimerBox" class="hidden my-auto text-center space-y-5">
+      <div class="text-xs text-zinc-500 uppercase tracking-widest font-semibold">Отдых между подходами</div>
+      <div id="restSeconds" class="text-8xl font-black text-white font-mono tracking-tighter">
+        30
+      </div>
+      <div class="pt-2">
+        <button type="button" onclick="skipRestTimer()" class="px-4 py-2 rounded-xl bg-zinc-900 border border-white/10 text-xs text-zinc-300 font-medium active:scale-95 transition">
+          Пропустить отдых ➔
+        </button>
+      </div>
+    </div>
+
+    <!-- Bottom Action Button -->
+    <div class="space-y-3 pb-1">
+      <button type="button" id="sessionActionBtn" onclick="completeCurrentSet()" class="w-full py-4 px-5 rounded-2xl bg-white hover:bg-zinc-200 active:scale-98 text-black font-bold text-base transition flex items-center justify-center gap-2">
+        <span>Подход выполнен</span>
+      </button>
+      <button type="button" id="sessionSkipBtn" onclick="openSkipModal()" class="w-full py-2.5 text-center text-xs text-zinc-500 hover:text-zinc-400 active:scale-95 transition">
+        Не могу сейчас выполнить (указать причину)
+      </button>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 2. WORKOUT VICTORY / UNLOCK OVERLAY -->
+  <!-- ========================================== -->
+  <div id="victoryOverlay" class="fixed inset-0 z-50 bg-black flex flex-col justify-between p-6 hidden safe-top safe-bottom text-center">
+    <div class="pt-8">
+      <div class="w-14 h-14 mx-auto rounded-full bg-zinc-900 border border-white/10 flex items-center justify-center text-2xl mb-4 text-emerald-400 font-bold">
+        ✓
+      </div>
+      <h2 class="text-2xl font-bold text-white tracking-tight">Норматив выполнен</h2>
+      <p class="text-xs text-zinc-400 mt-1">Доступ к приложению открыт. Стрик увеличен.</p>
+    </div>
+
+    <div class="app-card p-5 space-y-2 my-auto max-w-sm mx-auto w-full text-left">
+      <div class="text-[11px] uppercase font-semibold text-zinc-500 tracking-wider">Результат сессии</div>
+      <div id="victorySummaryText" class="text-sm font-semibold text-white">
+        Отжимания с ногами на диване: 3 подхода
+      </div>
+      <div class="text-xs text-emerald-400/90 pt-1">
+        Долг списан • Прогресс зафиксирован
+      </div>
+    </div>
+
+    <div class="space-y-2.5 pb-2 max-w-sm mx-auto w-full">
+      <button type="button" onclick="proceedToTargetApp()" class="w-full py-4 px-5 rounded-2xl bg-white hover:bg-zinc-200 active:scale-98 text-black font-bold text-sm transition">
+        <span id="targetAppBtnText">Открыть Telegram</span>
+      </button>
+      <button type="button" onclick="closeVictoryOverlay()" class="w-full py-3 rounded-2xl bg-zinc-900 border border-white/10 text-xs text-zinc-300 font-medium active:scale-98 transition">
+        Остаться в V-Gate
+      </button>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 3. SKIP REASON MODAL BOTTOM SHEET -->
+  <!-- ========================================== -->
+  <div id="skipModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex flex-col justify-end hidden">
+    <div class="app-card p-6 space-y-4 rounded-t-3xl border-b-0 max-h-[85vh] overflow-y-auto safe-bottom">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-bold text-white">Причина пропуска</h3>
+          <p class="text-xs text-zinc-400 mt-0.5">Фиксация контекста отказа</p>
+        </div>
+        <button type="button" onclick="closeSkipModal()" class="w-8 h-8 rounded-full bg-zinc-800 text-zinc-400 flex items-center justify-center text-sm active:scale-90 transition">
+          ✕
+        </button>
+      </div>
+
+      <div class="space-y-2 pt-1">
+        <textarea id="skipReasonInput" rows="3" placeholder="Например: на работе, не дома, сильно устал..." class="w-full p-3.5 rounded-2xl bg-zinc-900 border border-white/10 text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-white/30"></textarea>
+      </div>
+
+      <div class="p-3.5 rounded-xl bg-zinc-900 border border-white/5 text-xs text-zinc-400 leading-relaxed">
+        К нормативу на завтра будет добавлен <span class="text-amber-400 font-semibold">+1 штрафной подход</span> в долг.
+      </div>
+
+      <div class="space-y-2 pt-1">
+        <button type="button" onclick="submitSkipReason()" class="w-full py-3.5 px-4 rounded-2xl bg-white hover:bg-zinc-200 active:scale-98 text-black font-bold text-sm transition">
+          Зафиксировать пропуск и открыть доступ
+        </button>
+        <button type="button" onclick="closeSkipModal()" class="w-full py-2.5 text-xs text-zinc-500 hover:text-zinc-400">
+          Отмена
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 4. MAIN APP CONTENT -->
+  <!-- ========================================== -->
+  <main class="max-w-md mx-auto px-4 space-y-4">
+    
+    <!-- Top Header Bar -->
+    <header class="flex items-center justify-between pt-2 pb-1">
+      <div>
+        <div class="text-base font-black tracking-tight text-white">V-GATE</div>
+        <div id="headerDateStr" class="text-[11px] text-zinc-500 font-medium">Понедельник, 12 октября</div>
+      </div>
+
+      <div id="streakPill" class="px-3 py-1.5 rounded-xl bg-zinc-900 border border-white/10 text-xs font-medium text-zinc-300 flex items-center gap-1.5">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+        <span id="headerStreakCount">0 дней</span>
+      </div>
+    </header>
+
+    <!-- ==================== TAB 1: WORKOUT (ГЛАВНАЯ) ==================== -->
+    <section id="tabWorkout" class="space-y-3.5">
+      
+      <!-- Debt Notification Card (Conditional) -->
+      <div id="debtCard" class="hidden app-card p-4 flex items-center justify-between border-amber-500/20 bg-amber-500/[0.04]">
+        <div class="space-y-0.5">
+          <div class="text-xs font-bold text-amber-400">Накоплен штрафной долг</div>
+          <div id="debtCardText" class="text-[11px] text-zinc-400">+1 подход за предыдущий пропуск</div>
+        </div>
+        <span id="debtBadgeCount" class="px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-400 text-xs font-bold font-mono">
+          +1
+        </span>
+      </div>
+
+      <!-- Central Exercise Challenge Card -->
+      <div class="app-card p-5 space-y-4">
+        <div class="flex items-center justify-between">
+          <span id="mainCardZone" class="text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-lg bg-zinc-900 border border-white/10 text-zinc-300">
+            ВЕРХ ГРУДИ
+          </span>
+          <span id="mainCardTier" class="text-xs font-medium text-zinc-500">
+            Уровень: Атлет
+          </span>
+        </div>
+
+        <div class="space-y-1">
+          <h2 id="mainCardTitle" class="text-xl font-bold tracking-tight text-white">
+            Отжимания с ногами на диване
+          </h2>
+          <div id="mainCardPlan" class="text-sm font-semibold text-zinc-300 font-mono">
+            3 подхода × 12 повторений
+          </div>
+        </div>
+
+        <!-- Biomechanical Focus Cue -->
+        <div class="app-card-inner p-3.5 text-xs text-zinc-400 leading-relaxed">
+          <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1">Фокус техники:</div>
+          <p id="mainCardCue">
+            Наклон корпуса 35° смещает 100% нагрузки на верхний ключичный пучок груди. Низ груди выключен, трицепс не перегружать.
+          </p>
+        </div>
+
+        <!-- Action Controls -->
+        <div class="space-y-2 pt-1">
+          <button type="button" onclick="startWorkoutSession()" class="w-full py-4 px-5 rounded-2xl bg-white hover:bg-zinc-200 active:scale-98 text-black font-bold text-sm transition">
+            Начать выполнение
+          </button>
+          <button type="button" onclick="openSkipModal()" class="w-full py-2.5 text-center text-xs text-zinc-500 hover:text-zinc-400 active:scale-95 transition">
+            Пропустить сегодня (с фиксацией причины)
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Metrics Row -->
+      <div class="grid grid-cols-3 gap-2">
+        <div class="app-card p-3 text-center">
+          <div class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Сегодня</div>
+          <div id="metricDoneCount" class="text-lg font-bold text-white mt-0.5">0</div>
+        </div>
+        <div class="app-card p-3 text-center">
+          <div class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Пропуски</div>
+          <div id="metricSkipCount" class="text-lg font-bold text-zinc-400 mt-0.5">0</div>
+        </div>
+        <div class="app-card p-3 text-center">
+          <div class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Долг (подх.)</div>
+          <div id="metricDebtCount" class="text-lg font-bold text-amber-400 mt-0.5">0</div>
+        </div>
+      </div>
+
+      <!-- Recent Activity Log Section -->
+      <div class="space-y-2 pt-1">
+        <div class="flex items-center justify-between px-1">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-zinc-500">История сессий</h3>
+          <span id="logCountLabel" class="text-[10px] text-zinc-600">0 записей</span>
+        </div>
+        <div id="recentActivityList" class="space-y-2">
+          <!-- Populated by JS -->
+          <div class="app-card p-4 text-center text-xs text-zinc-500">
+            Записей пока нет. Выполни первую сессию выше.
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ==================== TAB 2: EXERCISES (БАЗА) ==================== -->
+    <section id="tabExercises" class="space-y-3.5 hidden">
+      
+      <!-- Zone Filter Chips -->
+      <div class="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+        <button type="button" onclick="filterExercises('all')" id="filterBtnAll" class="px-3.5 py-1.5 rounded-xl bg-white text-black font-semibold text-xs whitespace-nowrap active:scale-95 transition">
+          Все
+        </button>
+        <button type="button" onclick="filterExercises('chest')" id="filterBtnChest" class="px-3.5 py-1.5 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white font-medium text-xs whitespace-nowrap active:scale-95 transition border border-white/5">
+          Верх и центр груди
+        </button>
+        <button type="button" onclick="filterExercises('back')" id="filterBtnBack" class="px-3.5 py-1.5 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white font-medium text-xs whitespace-nowrap active:scale-95 transition border border-white/5">
+          Спина и осанка
+        </button>
+        <button type="button" onclick="filterExercises('shoulders')" id="filterBtnShoulders" class="px-3.5 py-1.5 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white font-medium text-xs whitespace-nowrap active:scale-95 transition border border-white/5">
+          Плечи
+        </button>
+        <button type="button" onclick="filterExercises('core')" id="filterBtnCore" class="px-3.5 py-1.5 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white font-medium text-xs whitespace-nowrap active:scale-95 transition border border-white/5">
+          Вакуум и талия
+        </button>
+      </div>
+
+      <!-- List of exercises -->
+      <div id="exercisesContainer" class="space-y-2.5">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: SETTINGS (НАСТРОЙКИ) ==================== -->
+    <section id="tabSettings" class="space-y-3.5 hidden">
+      
+      <!-- Difficulty Segmented Control -->
+      <div class="app-card p-4 space-y-2.5">
+        <div class="text-xs font-semibold text-white">Уровень нагрузки</div>
+        <div class="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-zinc-900 border border-white/5">
+          <button type="button" onclick="setTier(1)" id="tierBtn1" class="py-2 rounded-lg text-xs font-medium text-zinc-400 transition">
+            Новичок
+          </button>
+          <button type="button" onclick="setTier(2)" id="tierBtn2" class="py-2 rounded-lg text-xs font-semibold bg-white text-black transition">
+            Атлет
+          </button>
+          <button type="button" onclick="setTier(3)" id="tierBtn3" class="py-2 rounded-lg text-xs font-medium text-zinc-400 transition">
+            Зверь
+          </button>
+        </div>
+      </div>
+
+      <!-- Target App Setting -->
+      <div class="app-card p-4 space-y-2.5">
+        <div class="text-xs font-semibold text-white">Разблокируемое приложение</div>
+        <div class="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-zinc-900 border border-white/5">
+          <button type="button" onclick="setTargetApp('tg://')" id="btnTargetTg" class="py-2 rounded-lg text-xs font-semibold bg-white text-black transition">
+            Telegram
+          </button>
+          <button type="button" onclick="setTargetApp('youtube://')" id="btnTargetYt" class="py-2 rounded-lg text-xs font-medium text-zinc-400 transition">
+            YouTube
+          </button>
+          <button type="button" onclick="setTargetApp('instagram://')" id="btnTargetInsta" class="py-2 rounded-lg text-xs font-medium text-zinc-400 transition">
+            Instagram
+          </button>
+        </div>
+      </div>
+
+      <!-- iOS Shortcuts Integration Guide -->
+      <div class="app-card p-4 space-y-3">
+        <div class="text-xs font-semibold text-white">Автоматизация через «Команды» iOS</div>
+        
+        <div class="app-card-inner p-3.5 space-y-2 text-xs text-zinc-400 leading-relaxed">
+          <p>1. Открой стандартное приложение <b>«Команды»</b> на айфоне.</p>
+          <p>2. Вкладка <b>«Автоматизация»</b> ➔ нажми <b>«+»</b> (Создать).</p>
+          <p>3. Выбери <b>«Приложение»</b> ➔ выбери <b>Telegram</b> ➔ галочка «Открыто» ➔ <b>«Немедленный запуск»</b>.</p>
+          <p>4. Действие: <b>«Открыть URL»</b> ➔ вставь ссылку:</p>
+          <div class="pt-1">
+            <button type="button" onclick="copyPwaUrl()" id="copyUrlBtn" class="w-full py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-medium text-xs active:scale-95 transition">
+              Скопировать ссылку для команды
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Backup Export & Import -->
+      <div class="app-card p-4 flex items-center justify-between">
+        <div>
+          <div class="text-xs font-semibold text-white">Резервная копия данных</div>
+          <div class="text-[11px] text-zinc-500">История сессий и настроек</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="exportGateData()" class="px-3 py-1.5 rounded-xl bg-zinc-900 border border-white/10 text-xs font-medium text-zinc-300 active:scale-95 transition">
+            Экспорт
+          </button>
+          <label class="px-3 py-1.5 rounded-xl bg-zinc-900 border border-white/10 text-xs font-medium text-zinc-300 cursor-pointer active:scale-95 transition">
+            Импорт
+            <input type="file" accept=".json" onchange="importGateData(event)" class="hidden">
+          </label>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- 5. FLOATING MINIMALIST DOCK NAVIGATION -->
+  <!-- ========================================== -->
+  <nav class="fixed left-0 right-0 z-40 flex justify-center pointer-events-none px-4 select-none" style="bottom: max(env(safe-area-inset-bottom, 20px), 16px);">
+    <div class="pointer-events-auto h-[58px] px-6 bg-[#18181b]/90 backdrop-blur-2xl border border-white/10 rounded-full flex items-center justify-between gap-6 shadow-2xl shadow-black/80 max-w-[280px] w-full">
+      
+      <!-- Tab 1: Workout -->
+      <button type="button" onclick="switchTab('workout')" id="navWorkout" class="flex flex-col items-center justify-center w-12 h-12 app-tab-active transition active:scale-90" aria-label="Тренировка">
+        <svg class="w-5 h-5 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 5v14M18 5v14M2 9v6M22 9v6M6 12h12"/>
+        </svg>
+        <span class="text-[9px] font-medium tracking-tight mt-0.5">Тренировка</span>
+      </button>
+
+      <!-- Tab 2: Exercises -->
+      <button type="button" onclick="switchTab('exercises')" id="navExercises" class="flex flex-col items-center justify-center w-12 h-12 text-zinc-500 transition active:scale-90" aria-label="База">
+        <svg class="w-5 h-5 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+          <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+          <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+          <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+        </svg>
+        <span class="text-[9px] font-medium tracking-tight mt-0.5">База</span>
+      </button>
+
+      <!-- Tab 3: Settings -->
+      <button type="button" onclick="switchTab('settings')" id="navSettings" class="flex flex-col items-center justify-center w-12 h-12 text-zinc-500 transition active:scale-90" aria-label="Настройки">
+        <svg class="w-5 h-5 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+        <span class="text-[9px] font-medium tracking-tight mt-0.5">Настройки</span>
+      </button>
+
+    </div>
+  </nav>
+
+  <!-- ========================================== -->
+  <!-- 6. APPLICATION LOGIC & INDEXEDDB ENGINE -->
+  <!-- ========================================== -->
+  <script>
+    // --- 12 V-GATE EXERCISES DATABASE ---
+    // Specifically calibrated for Upper/Center Chest, Posture, Shoulder width, Waist vacuum.
+    // Strictly eliminating triceps isolation and lower chest.
+    const EXERCISES_DATA = [
+      // Зона: Центр и верх груди (трицепс и низ груди исключены)
+      {
+        id: 'chest_decline',
+        zone: 'chest',
+        zoneName: 'Верх груди (ключичный пучок)',
+        name: 'Отжимания с ногами на диване',
+        cue: 'Носки на возвышении 30-40 см, руки чуть шире плеч. Наклон корпуса смещает 100% нагрузки в верхний ключичный пучок груди. Низ груди отключен.',
+        tiers: {
+          1: { sets: 3, reps: 8, isTime: false, label: '3 подхода × 8 повторений' },
+          2: { sets: 3, reps: 12, isTime: false, label: '3 подхода × 12 повторений' },
+          3: { sets: 4, reps: 15, isTime: false, label: '4 подхода × 15 повторений' }
+        }
+      },
+      {
+        id: 'chest_diamond',
+        zone: 'chest',
+        zoneName: 'Центр груди',
+        name: 'Алмазные отжимания на центр',
+        cue: 'Кисти вместе под грудиной, локти 45°. Вверху НЕ выпрямляйте локти до щелчка (чтобы не отдавать вес трицепсу), а сознательно сводите грудные мышцы к центру.',
+        tiers: {
+          1: { sets: 3, reps: 8, isTime: false, label: '3 подхода × 8 повторений' },
+          2: { sets: 3, reps: 12, isTime: false, label: '3 подхода × 12 повторений' },
+          3: { sets: 4, reps: 15, isTime: false, label: '4 подхода × 15 повторений' }
+        }
+      },
+      {
+        id: 'chest_prayer',
+        zone: 'chest',
+        zoneName: 'Центр груди (изометрия)',
+        name: 'Сжатие ладоней («Молитва»)',
+        cue: 'Ладони на уровне солнечного сплетения. С максимальным усилием давите ладонями внутрь навстречу друг другу. Трицепс выключен на 100%, максимальная прорисовка ложбинки.',
+        tiers: {
+          1: { sets: 3, reps: 20, isTime: true, label: '3 подхода × 20 секунд' },
+          2: { sets: 4, reps: 25, isTime: true, label: '4 подхода × 25 секунд' },
+          3: { sets: 4, reps: 35, isTime: true, label: '4 подхода × 35 секунд' }
+        }
+      },
+
+      // Зона: Спина и осанка
+      {
+        id: 'back_superman',
+        zone: 'back',
+        zoneName: 'Спина и осанка',
+        name: 'Лодочка на полу',
+        cue: 'Лежа на животе. На выдохе одновременно оторвите грудь и прямые ноги от пола, сведите лопатки.',
+        tiers: {
+          1: { sets: 3, reps: 12, isTime: false, label: '3 подхода × 12 повторений' },
+          2: { sets: 3, reps: 16, isTime: false, label: '3 подхода × 16 повторений' },
+          3: { sets: 4, reps: 20, isTime: false, label: '4 подхода × 20 повторений' }
+        }
+      },
+      {
+        id: 'back_cobra',
+        zone: 'back',
+        zoneName: 'Спина и осанка',
+        name: 'Кобра W-to-Y (сведение лопаток)',
+        cue: 'Лежа на животе. Разгибайте руки в Y вперед, затем мощно тяните локти назад к ребрам в букву W.',
+        tiers: {
+          1: { sets: 3, reps: 12, isTime: false, label: '3 подхода × 12 повторений' },
+          2: { sets: 3, reps: 15, isTime: false, label: '3 подхода × 15 повторений' },
+          3: { sets: 4, reps: 18, isTime: false, label: '4 подхода × 18 повторений' }
+        }
+      },
+      {
+        id: 'back_rev_plank',
+        zone: 'back',
+        zoneName: 'Спина и осанка',
+        name: 'Обратная планка на пятках',
+        cue: 'Упор руками сзади. Поднимите таз, вытянув тело в струну. Держите напряжение ягодиц и разгибателей спины.',
+        tiers: {
+          1: { sets: 3, reps: 25, isTime: true, label: '3 подхода × 25 секунд' },
+          2: { sets: 3, reps: 40, isTime: true, label: '3 подхода × 40 секунд' },
+          3: { sets: 4, reps: 50, isTime: true, label: '4 подхода × 50 секунд' }
+        }
+      },
+
+      // Зона: Плечи и дельты
+      {
+        id: 'shoulders_pike',
+        zone: 'shoulders',
+        zoneName: 'Плечи и верх груди',
+        name: 'Отжимания уголком (Pike)',
+        cue: 'Таз поднят вверх. Опускайтесь головой вперед к полу по траектории треугольника. Включает переднюю/среднюю дельту без трицепса.',
+        tiers: {
+          1: { sets: 3, reps: 8, isTime: false, label: '3 подхода × 8 повторений' },
+          2: { sets: 3, reps: 12, isTime: false, label: '3 подхода × 12 повторений' },
+          3: { sets: 4, reps: 15, isTime: false, label: '4 подхода × 15 повторений' }
+        }
+      },
+      {
+        id: 'shoulders_tplank',
+        zone: 'shoulders',
+        zoneName: 'Плечи (средняя дельта)',
+        name: 'Т-планка на ширину плеч',
+        cue: 'Из упора лежа разворачивайте корпус боком, поднимая прямую руку вертикально вверх с фиксацией на 1 сек.',
+        tiers: {
+          1: { sets: 3, reps: 12, isTime: false, label: '3 подхода × 12 разворотов' },
+          2: { sets: 3, reps: 16, isTime: false, label: '3 подхода × 16 разворотов' },
+          3: { sets: 4, reps: 20, isTime: false, label: '4 подхода × 20 разворотов' }
+        }
+      },
+      {
+        id: 'shoulders_taps',
+        zone: 'shoulders',
+        zoneName: 'Плечи и баланс',
+        name: 'Планка с касанием плеч',
+        cue: 'Планка на прямых руках. Поочередно касайтесь противоположного плеча, удерживая таз неподвижным.',
+        tiers: {
+          1: { sets: 3, reps: 16, isTime: false, label: '3 подхода × 16 касаний' },
+          2: { sets: 3, reps: 24, isTime: false, label: '3 подхода × 24 касания' },
+          3: { sets: 4, reps: 30, isTime: false, label: '4 подхода × 30 касаний' }
+        }
+      },
+
+      // Зона: Вакуум и талия
+      {
+        id: 'core_vacuum',
+        zone: 'core',
+        zoneName: 'Вакуум и талия',
+        name: 'Вакуум живота (сужение талии)',
+        cue: 'Полный выдох всего воздуха. Без вдоха максимально втяните живот под ребра к позвоночнику. Удерживайте вакуум.',
+        tiers: {
+          1: { sets: 3, reps: 15, isTime: true, label: '3 подхода × 15 секунд' },
+          2: { sets: 4, reps: 20, isTime: true, label: '4 подхода × 20 секунд' },
+          3: { sets: 4, reps: 30, isTime: true, label: '4 подхода × 30 секунд' }
+        }
+      },
+      {
+        id: 'core_deadbug',
+        zone: 'core',
+        zoneName: 'Вакуум и талия',
+        name: 'Мертвый жук (Dead Bug)',
+        cue: 'Лежа на спине, поясница прижата к полу. Поочередно вытягивайте противоположные руку и ногу.',
+        tiers: {
+          1: { sets: 3, reps: 16, isTime: false, label: '3 подхода × 16 повторений' },
+          2: { sets: 3, reps: 24, isTime: false, label: '3 подхода × 24 повторения' },
+          3: { sets: 4, reps: 30, isTime: false, label: '4 подхода × 30 повторений' }
+        }
+      },
+      {
+        id: 'core_climber',
+        zone: 'core',
+        zoneName: 'Вакуум и талия',
+        name: 'Медленный диагональный альпинист',
+        cue: 'Упор лежа. Медленно тяните колено к противоположному локтю с фиксацией на 1 сек, без инерции.',
+        tiers: {
+          1: { sets: 3, reps: 16, isTime: false, label: '3 подхода × 16 повторений' },
+          2: { sets: 3, reps: 24, isTime: false, label: '3 подхода × 24 повторения' },
+          3: { sets: 4, reps: 30, isTime: false, label: '4 подхода × 30 повторений' }
+        }
+      }
+    ];
+
+    // --- INDEXEDDB STORAGE ---
+    let db;
+    const DB_NAME = 'VGateDB';
+    const DB_VERSION = 1;
+
+    async function initDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = (e) => {
+          const d = e.target.result;
+          if (!d.objectStoreNames.contains('logs')) {
+            const store = d.createObjectStore('logs', { keyPath: 'id', autoIncrement: true });
+            store.createIndex('date', 'date', { unique: false });
+            store.createIndex('status', 'status', { unique: false });
+          }
+          if (!d.objectStoreNames.contains('settings')) {
+            d.createObjectStore('settings', { keyPath: 'key' });
+          }
+        };
+        req.onsuccess = () => {
+          db = req.result;
+          resolve();
+        };
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbGetSetting(key, fallback = null) {
+      return new Promise((res) => {
+        const tx = db.transaction('settings', 'readonly');
+        const req = tx.objectStore('settings').get(key);
+        req.onsuccess = () => res(req.result ? req.result.value : fallback);
+        req.onerror = () => res(fallback);
+      });
+    }
+
+    async function dbSetSetting(key, value) {
+      return new Promise((res) => {
+        const tx = db.transaction('settings', 'readwrite');
+        tx.objectStore('settings').put({ key, value });
+        tx.oncomplete = () => res();
+      });
+    }
+
+    async function dbAddLog(entry) {
+      return new Promise((res) => {
+        const tx = db.transaction('logs', 'readwrite');
+        tx.objectStore('logs').add(entry);
+        tx.oncomplete = () => res();
+      });
+    }
+
+    async function dbGetAllLogs() {
+      return new Promise((res) => {
+        const tx = db.transaction('logs', 'readonly');
+        const req = tx.objectStore('logs').getAll();
+        req.onsuccess = () => res(req.result || []);
+        req.onerror = () => res([]);
+      });
+    }
+
+    // --- APP STATE ---
+    let currentTier = 2; // 1: Новичок, 2: Атлет, 3: Зверь
+    let targetAppUrl = 'tg://';
+    let currentStreak = 0;
+    let accumulatedDebt = 0;
+    let currentActiveExercise = null;
+    let activeSession = null;
+    let restTimerInterval = null;
+
+    // Pick exercise for today: chest prioritized
+    function pickNextExercise() {
+      const dayNum = new Date().getDate();
+      // Prioritize chest exercises (indices 0, 1, 2)
+      const chestList = EXERCISES_DATA.filter(e => e.zone === 'chest');
+      const otherList = EXERCISES_DATA.filter(e => e.zone !== 'chest');
+      
+      // 2 out of 3 days focus strictly on upper or center chest
+      if (dayNum % 3 !== 0) {
+        return chestList[dayNum % chestList.length];
+      } else {
+        return otherList[dayNum % otherList.length];
+      }
+    }
+
+    // --- WORKOUT INTERACTIVE SESSION ---
+    function startWorkoutSession(overrideExercise = null) {
+      currentActiveExercise = overrideExercise || currentActiveExercise || pickNextExercise();
+      const tierData = currentActiveExercise.tiers[currentTier];
+      const totalSets = tierData.sets + accumulatedDebt;
+
+      activeSession = {
+        exercise: currentActiveExercise,
+        tierData: tierData,
+        currentSet: 1,
+        totalSets: totalSets,
+        reps: tierData.reps,
+        isTime: tierData.isTime,
+        timerInterval: null
+      };
+
+      document.getElementById('sessionExTitle').innerText = currentActiveExercise.name;
+      document.getElementById('sessionExCue').innerText = currentActiveExercise.cue;
+      document.getElementById('sessionZoneLabel').innerText = currentActiveExercise.zone === 'chest' ? 'ГРУДЬ' : (currentActiveExercise.zone === 'back' ? 'СПИНА' : (currentActiveExercise.zone === 'shoulders' ? 'ПЛЕЧИ' : 'КОР'));
+
+      document.getElementById('restTimerBox').classList.add('hidden');
+      document.getElementById('setCounterBox').classList.remove('hidden');
+      document.getElementById('sessionActionBtn').classList.remove('hidden');
+      document.getElementById('sessionSkipBtn').classList.remove('hidden');
+
+      document.getElementById('workoutOverlay').classList.remove('hidden');
+      renderSessionStep();
+    }
+
+    function renderSessionStep() {
+      const s = activeSession;
+      document.getElementById('sessionProgressLabel').innerText = `Подход ${s.currentSet} из ${s.totalSets}`;
+      
+      const dotsCont = document.getElementById('sessionDotsContainer');
+      dotsCont.innerHTML = '';
+      for (let i = 1; i <= s.totalSets; i++) {
+        const d = document.createElement('div');
+        d.className = `w-2 h-2 rounded-full transition-all ${i < s.currentSet ? 'bg-emerald-400' : (i === s.currentSet ? 'bg-white ring-2 ring-white/30' : 'bg-zinc-700')}`;
+        dotsCont.appendChild(d);
+      }
+
+      const mainVal = document.getElementById('sessionMainValue');
+      const unitLabel = document.getElementById('sessionUnitLabel');
+      const actionBtn = document.getElementById('sessionActionBtn');
+
+      if (s.isTime) {
+        mainVal.innerText = s.reps;
+        unitLabel.innerText = 'секунд (статика)';
+        actionBtn.innerText = 'Запустить секундомер подхода';
+        actionBtn.onclick = runStaticTimer;
+      } else {
+        mainVal.innerText = s.reps;
+        unitLabel.innerText = 'повторений';
+        actionBtn.innerText = 'Подход выполнен';
+        actionBtn.onclick = completeCurrentSet;
+      }
+    }
+
+    function runStaticTimer() {
+      const btn = document.getElementById('sessionActionBtn');
+      btn.disabled = true;
+      let timeLeft = activeSession.reps;
+      document.getElementById('sessionMainValue').innerText = timeLeft;
+
+      activeSession.timerInterval = setInterval(() => {
+        timeLeft--;
+        document.getElementById('sessionMainValue').innerText = timeLeft;
+        if (timeLeft <= 0) {
+          clearInterval(activeSession.timerInterval);
+          btn.disabled = false;
+          try { if (navigator.vibrate) navigator.vibrate([100, 50, 100]); } catch(e){}
+          completeCurrentSet();
+        }
+      }, 1000);
+    }
+
+    function completeCurrentSet() {
+      try { if (navigator.vibrate) navigator.vibrate(50); } catch(e){}
+      if (activeSession.currentSet < activeSession.totalSets) {
+        activeSession.currentSet++;
+        startRestPeriod(30);
+      } else {
+        finishWorkoutSessionSuccess();
+      }
+    }
+
+    function startRestPeriod(seconds) {
+      document.getElementById('setCounterBox').classList.add('hidden');
+      document.getElementById('sessionActionBtn').classList.add('hidden');
+      document.getElementById('sessionSkipBtn').classList.add('hidden');
+      document.getElementById('restTimerBox').classList.remove('hidden');
+
+      let sLeft = seconds;
+      document.getElementById('restSeconds').innerText = sLeft;
+
+      restTimerInterval = setInterval(() => {
+        sLeft--;
+        document.getElementById('restSeconds').innerText = sLeft;
+        if (sLeft <= 0) {
+          skipRestTimer();
+        }
+      }, 1000);
+    }
+
+    function skipRestTimer() {
+      if (restTimerInterval) clearInterval(restTimerInterval);
+      document.getElementById('restTimerBox').classList.add('hidden');
+      document.getElementById('setCounterBox').classList.remove('hidden');
+      document.getElementById('sessionActionBtn').classList.remove('hidden');
+      document.getElementById('sessionSkipBtn').classList.remove('hidden');
+      renderSessionStep();
+    }
+
+    async function finishWorkoutSessionSuccess() {
+      document.getElementById('workoutOverlay').classList.add('hidden');
+      
+      const entry = {
+        timestamp: new Date().toISOString(),
+        date: new Date().toISOString().slice(0, 10),
+        time: new Date().toTimeString().slice(0, 5),
+        exerciseId: activeSession.exercise.id,
+        exerciseName: activeSession.exercise.name,
+        zone: activeSession.exercise.zone,
+        status: 'completed',
+        setsDone: activeSession.totalSets,
+        repsDone: activeSession.reps,
+        reason: '',
+        debtRepaid: accumulatedDebt
+      };
+      await dbAddLog(entry);
+
+      accumulatedDebt = 0;
+      currentStreak++;
+      await dbSetSetting('accumulatedDebt', 0);
+      await dbSetSetting('streak', currentStreak);
+      await dbSetSetting('lastDoneDate', entry.date);
+
+      document.getElementById('victorySummaryText').innerText = `${activeSession.exercise.name}: ${activeSession.totalSets} подходов`;
+      document.getElementById('targetAppBtnText').innerText = targetAppUrl.includes('tg') ? 'Открыть Telegram' : (targetAppUrl.includes('youtube') ? 'Открыть YouTube' : 'Открыть приложение');
+      document.getElementById('victoryOverlay').classList.remove('hidden');
+
+      refreshDashboard();
+      try { if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 200]); } catch(e){}
+    }
+
+    function abortWorkoutSession() {
+      if (activeSession && activeSession.timerInterval) clearInterval(activeSession.timerInterval);
+      if (restTimerInterval) clearInterval(restTimerInterval);
+      document.getElementById('workoutOverlay').classList.add('hidden');
+      document.getElementById('restTimerBox').classList.add('hidden');
+      document.getElementById('setCounterBox').classList.remove('hidden');
+      document.getElementById('sessionActionBtn').classList.remove('hidden');
+    }
+
+    function closeVictoryOverlay() {
+      document.getElementById('victoryOverlay').classList.add('hidden');
+    }
+
+    function proceedToTargetApp() {
+      window.location.href = targetAppUrl;
+    }
+
+    // --- SKIP MODAL & DEBT ---
+    function openSkipModal() {
+      document.getElementById('skipModal').classList.remove('hidden');
+      setTimeout(() => document.getElementById('skipReasonInput').focus(), 150);
+    }
+
+    function closeSkipModal() {
+      document.getElementById('skipModal').classList.add('hidden');
+    }
+
+    async function submitSkipReason() {
+      const reasonText = document.getElementById('skipReasonInput').value.trim();
+      if (!reasonText) {
+        alert('Пожалуйста, укажи причину');
+        return;
+      }
+
+      accumulatedDebt += 1;
+      await dbSetSetting('accumulatedDebt', accumulatedDebt);
+
+      const entry = {
+        timestamp: new Date().toISOString(),
+        date: new Date().toISOString().slice(0, 10),
+        time: new Date().toTimeString().slice(0, 5),
+        exerciseId: currentActiveExercise ? currentActiveExercise.id : 'unknown',
+        exerciseName: currentActiveExercise ? currentActiveExercise.name : 'V-Gate',
+        zone: currentActiveExercise ? currentActiveExercise.zone : 'all',
+        status: 'skipped',
+        setsDone: 0,
+        repsDone: 0,
+        reason: reasonText,
+        debtAdded: 1
+      };
+      await dbAddLog(entry);
+
+      document.getElementById('skipReasonInput').value = '';
+      closeSkipModal();
+      abortWorkoutSession();
+
+      refreshDashboard();
+      window.location.href = targetAppUrl;
+    }
+
+    // --- TAB SWITCHING ---
+    function switchTab(tab) {
+      document.getElementById('tabWorkout').classList.add('hidden');
+      document.getElementById('tabExercises').classList.add('hidden');
+      document.getElementById('tabSettings').classList.add('hidden');
+
+      ['navWorkout', 'navExercises', 'navSettings'].forEach(id => {
+        const el = document.getElementById(id);
+        el.className = 'flex flex-col items-center justify-center w-12 h-12 text-zinc-500 transition active:scale-90';
+      });
+
+      if (tab === 'workout') {
+        document.getElementById('tabWorkout').classList.remove('hidden');
+        document.getElementById('navWorkout').className = 'flex flex-col items-center justify-center w-12 h-12 app-tab-active transition active:scale-90';
+        refreshDashboard();
+      } else if (tab === 'exercises') {
+        document.getElementById('tabExercises').classList.remove('hidden');
+        document.getElementById('navExercises').className = 'flex flex-col items-center justify-center w-12 h-12 app-tab-active transition active:scale-90';
+      } else if (tab === 'settings') {
+        document.getElementById('tabSettings').classList.remove('hidden');
+        document.getElementById('navSettings').className = 'flex flex-col items-center justify-center w-12 h-12 app-tab-active transition active:scale-90';
+      }
+    }
+
+    // --- DASHBOARD REFRESH ---
+    async function refreshDashboard() {
+      const today = new Date().toISOString().slice(0, 10);
+      const logs = await dbGetAllLogs();
+      const todayLogs = logs.filter(l => l.date === today);
+
+      const doneCount = todayLogs.filter(l => l.status === 'completed').length;
+      const skipCount = todayLogs.filter(l => l.status === 'skipped').length;
+
+      document.getElementById('metricDoneCount').innerText = doneCount;
+      document.getElementById('metricSkipCount').innerText = skipCount;
+      document.getElementById('metricDebtCount').innerText = accumulatedDebt;
+      document.getElementById('headerStreakCount').innerText = `${currentStreak} дн.`;
+
+      // Debt card state
+      const debtCard = document.getElementById('debtCard');
+      if (accumulatedDebt > 0) {
+        debtCard.classList.remove('hidden');
+        document.getElementById('debtCardText').innerText = `+${accumulatedDebt} штрафных подхода к сегодняшнему нормативу`;
+        document.getElementById('debtBadgeCount').innerText = `+${accumulatedDebt}`;
+      } else {
+        debtCard.classList.add('hidden');
+      }
+
+      // Pick or restore current exercise
+      if (!currentActiveExercise) {
+        currentActiveExercise = pickNextExercise();
+      }
+      const tierData = currentActiveExercise.tiers[currentTier];
+      document.getElementById('mainCardZone').innerText = currentActiveExercise.zoneName.toUpperCase();
+      document.getElementById('mainCardTier').innerText = `Уровень: ${currentTier === 1 ? 'Новичок' : (currentTier === 2 ? 'Атлет' : 'Зверь')}`;
+      document.getElementById('mainCardTitle').innerText = currentActiveExercise.name;
+      
+      let planStr = tierData.label;
+      if (accumulatedDebt > 0) {
+        planStr += ` (+${accumulatedDebt} в долг)`;
+      }
+      document.getElementById('mainCardPlan').innerText = planStr;
+      document.getElementById('mainCardCue').innerText = currentActiveExercise.cue;
+
+      // Populate recent activity log
+      const logContainer = document.getElementById('recentActivityList');
+      logContainer.innerHTML = '';
+      document.getElementById('logCountLabel').innerText = `${logs.length} записей`;
+
+      if (logs.length === 0) {
+        logContainer.innerHTML = '<div class="app-card p-4 text-center text-xs text-zinc-500">Записей пока нет. Выполни первую сессию выше.</div>';
+      } else {
+        logs.slice(-5).reverse().forEach(l => {
+          const isDone = l.status === 'completed';
+          const card = document.createElement('div');
+          card.className = 'app-card p-3.5 flex items-center justify-between text-xs';
+          card.innerHTML = `
+            <div class="space-y-0.5">
+              <div class="font-semibold text-white flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full ${isDone ? 'bg-emerald-400' : 'bg-amber-400'}"></span>
+                <span>${escapeHtml(l.exerciseName)}</span>
+              </div>
+              <div class="text-[11px] text-zinc-500">
+                ${l.date} • ${l.time} ${!isDone && l.reason ? `• «${escapeHtml(l.reason)}»` : ''}
+              </div>
+            </div>
+            <div class="text-[11px] font-mono font-medium ${isDone ? 'text-emerald-400' : 'text-amber-400'}">
+              ${isDone ? `✓ ${l.setsDone} подх.` : '+1 долг'}
+            </div>
+          `;
+          logContainer.appendChild(card);
+        });
+      }
+    }
+
+    function escapeHtml(str) {
+      return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // --- EXERCISES CATALOG ---
+    function renderExercisesList(filter = 'all') {
+      const container = document.getElementById('exercisesContainer');
+      container.innerHTML = '';
+
+      const items = filter === 'all' ? EXERCISES_DATA : EXERCISES_DATA.filter(e => e.zone === filter);
+
+      items.forEach(ex => {
+        const tierData = ex.tiers[currentTier];
+        const card = document.createElement('div');
+        card.className = 'app-card p-4 space-y-2.5';
+        card.innerHTML = `
+          <div class="flex items-start justify-between">
+            <div class="space-y-0.5">
+              <div class="text-xs font-bold text-white">${escapeHtml(ex.name)}</div>
+              <div class="text-[10px] text-zinc-500 uppercase font-semibold tracking-wider">${escapeHtml(ex.zoneName)}</div>
+            </div>
+            <span class="px-2 py-0.5 rounded-lg bg-zinc-900 border border-white/10 text-zinc-300 text-[10px] font-mono font-medium">
+              ${tierData.label.split('×')[1] ? tierData.label.split('×')[1].trim() : tierData.label}
+            </span>
+          </div>
+          <p class="text-xs text-zinc-400 leading-relaxed app-card-inner p-3">
+            ${escapeHtml(ex.cue)}
+          </p>
+          <div class="flex items-center justify-between pt-1">
+            <span class="text-[11px] text-zinc-500 font-mono">${tierData.label}</span>
+            <button type="button" onclick="startSingleExercise('${ex.id}')" class="px-3.5 py-1.5 rounded-xl bg-white hover:bg-zinc-200 active:scale-95 text-black font-semibold text-xs transition">
+              Выполнить ➔
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function filterExercises(zone) {
+      ['filterBtnAll', 'filterBtnChest', 'filterBtnBack', 'filterBtnShoulders', 'filterBtnCore'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) {
+          btn.className = 'px-3.5 py-1.5 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white font-medium text-xs whitespace-nowrap active:scale-95 transition border border-white/5';
+        }
+      });
+      const activeId = zone === 'all' ? 'filterBtnAll' : (zone === 'chest' ? 'filterBtnChest' : (zone === 'back' ? 'filterBtnBack' : (zone === 'shoulders' ? 'filterBtnShoulders' : 'filterBtnCore')));
+      const activeBtn = document.getElementById(activeId);
+      if (activeBtn) activeBtn.className = 'px-3.5 py-1.5 rounded-xl bg-white text-black font-semibold text-xs whitespace-nowrap active:scale-95 transition';
+
+      renderExercisesList(zone);
+    }
+
+    function startSingleExercise(exId) {
+      const ex = EXERCISES_DATA.find(e => e.id === exId);
+      if (ex) {
+        startWorkoutSession(ex);
+      }
+    }
+
+    // --- SETTINGS CONTROLS ---
+    async function setTier(t) {
+      currentTier = t;
+      await dbSetSetting('currentTier', t);
+      [1, 2, 3].forEach(n => {
+        const btn = document.getElementById(`tierBtn${n}`);
+        if (n === t) {
+          btn.className = 'py-2 rounded-lg text-xs font-semibold bg-white text-black transition';
+        } else {
+          btn.className = 'py-2 rounded-lg text-xs font-medium text-zinc-400 transition';
+        }
+      });
+      renderExercisesList('all');
+      refreshDashboard();
+    }
+
+    async function setTargetApp(scheme) {
+      targetAppUrl = scheme;
+      await dbSetSetting('targetAppUrl', scheme);
+      const isTg = scheme.includes('tg');
+      const isYt = scheme.includes('youtube');
+      const isInsta = scheme.includes('instagram');
+
+      document.getElementById('btnTargetTg').className = isTg ? 'py-2 rounded-lg text-xs font-semibold bg-white text-black transition' : 'py-2 rounded-lg text-xs font-medium text-zinc-400 transition';
+      document.getElementById('btnTargetYt').className = isYt ? 'py-2 rounded-lg text-xs font-semibold bg-white text-black transition' : 'py-2 rounded-lg text-xs font-medium text-zinc-400 transition';
+      document.getElementById('btnTargetInsta').className = isInsta ? 'py-2 rounded-lg text-xs font-semibold bg-white text-black transition' : 'py-2 rounded-lg text-xs font-medium text-zinc-400 transition';
+    }
+
+    function copyPwaUrl() {
+      const url = window.location.origin + window.location.pathname + '?gate=1';
+      navigator.clipboard.writeText(url).then(() => {
+        const btn = document.getElementById('copyUrlBtn');
+        btn.innerText = '✓ Ссылка скопирована!';
+        setTimeout(() => {
+          btn.innerText = 'Скопировать ссылку для команды';
+        }, 2000);
+      });
+    }
+
+    async function exportGateData() {
+      const logs = await dbGetAllLogs();
+      const backup = {
+        app: 'V-Gate',
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        streak: currentStreak,
+        debt: accumulatedDebt,
+        tier: currentTier,
+        logs: logs
+      };
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `vgate-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+    }
+
+    async function importGateData(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        if (data.logs && Array.isArray(data.logs)) {
+          for (const l of data.logs) {
+            delete l.id;
+            await dbAddLog(l);
+          }
+        }
+        if (typeof data.streak === 'number') {
+          currentStreak = data.streak;
+          await dbSetSetting('streak', currentStreak);
+        }
+        if (typeof data.debt === 'number') {
+          accumulatedDebt = data.debt;
+          await dbSetSetting('accumulatedDebt', accumulatedDebt);
+        }
+        alert('Данные успешно импортированы');
+        refreshDashboard();
+      } catch (e) {
+        alert('Ошибка при импорте: ' + e.message);
+      } finally {
+        event.target.value = '';
+      }
+    }
+
+    // --- INITIALIZATION ---
+    window.addEventListener('DOMContentLoaded', async () => {
+      await initDB();
+
+      currentTier = await dbGetSetting('currentTier', 2);
+      targetAppUrl = await dbGetSetting('targetAppUrl', 'tg://');
+      currentStreak = await dbGetSetting('streak', 0);
+      accumulatedDebt = await dbGetSetting('accumulatedDebt', 0);
+
+      const options = { weekday: 'long', day: 'numeric', month: 'long' };
+      document.getElementById('headerDateStr').innerText = new Intl.DateTimeFormat('ru-RU', options).format(new Date());
+
+      renderExercisesList('all');
+      setTier(currentTier);
+      setTargetApp(targetAppUrl);
+      refreshDashboard();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('gate') === '1') {
+        startWorkoutSession();
+      }
+
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      }
+    });
+  </script>
+</body>
+</html>

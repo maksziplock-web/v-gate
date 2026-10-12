@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="icon-192.png">
   <link rel="manifest" href="manifest.json">
-  <title>V-Gate • Привычки и V-силуэт</title>
+  <title>V-Gate</title>
   <script src="tailwind.min.js"></script>
   <style>
     *, *::before, *::after {
@@ -34,571 +34,472 @@
       background-color: #000000 !important;
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif !important;
       color: #ffffff;
-      padding-top: calc(env(safe-area-inset-top, 48px));
-      padding-bottom: calc(env(safe-area-inset-bottom, 24px) + 76px);
+      padding-top: calc(env(safe-area-inset-top, 44px));
+      padding-bottom: calc(env(safe-area-inset-bottom, 24px) + 84px);
       overflow-x: hidden;
     }
-    .safe-top { padding-top: env(safe-area-inset-top, 48px); }
-    .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 24px); }
-    .glow-emerald { box-shadow: 0 0 25px rgba(16, 185, 129, 0.25); }
-    .glow-violet { box-shadow: 0 0 25px rgba(139, 92, 246, 0.25); }
-    .glow-coral { box-shadow: 0 0 25px rgba(239, 68, 68, 0.25); }
-    .glass-card {
-      background: #141417;
+    .safe-top { padding-top: max(env(safe-area-inset-top, 44px), 20px); }
+    .safe-bottom { padding-bottom: max(env(safe-area-inset-bottom, 24px), 20px); }
+    
+    /* Titanium / Apple Dark Card Aesthetic */
+    .app-card {
+      background: #141416;
       border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 24px;
+      border-radius: 22px;
     }
-    .tab-active {
-      color: #10b981 !important;
-      transform: scale(1.04);
+    .app-card-inner {
+      background: #1c1c1f;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
     }
-    .custom-scroll::-webkit-scrollbar { display: none; }
-    @keyframes pulseSlow {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.85; transform: scale(0.98); }
+    .app-tab-active {
+      color: #ffffff !important;
     }
-    .pulse-ring { animation: pulseSlow 3s infinite ease-in-out; }
+    .app-tab-active svg {
+      color: #ffffff !important;
+      transform: scale(1.05);
+    }
+    * {
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
+    }
+    *::-webkit-scrollbar {
+      display: none !important;
+    }
   </style>
 </head>
 <body class="bg-black text-white min-h-screen select-none antialiased">
 
   <!-- ========================================== -->
-  <!-- 1. FULLSCREEN GATE VIEW (Режим Шлагбаума) -->
+  <!-- 1. FULLSCREEN GATE / WORKOUT INTERACTIVE SESSION -->
   <!-- ========================================== -->
-  <div id="gateOverlay" class="fixed inset-0 z-50 bg-black flex flex-col justify-between p-5 hidden safe-top safe-bottom overflow-y-auto custom-scroll">
-    <!-- Gate Header -->
-    <div class="space-y-2 text-center pt-2">
-      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold tracking-wider uppercase">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-        V-Gate • Контроль Доступа
-      </div>
-      <h1 class="text-2xl font-black tracking-tight text-white">Выполни упражнение</h1>
-      <p class="text-xs text-zinc-400">Плата за открытие приложения. Создаем V-силуэт шаг за шагом.</p>
-    </div>
-
-    <!-- Active Challenge Card -->
-    <div class="my-auto py-4 space-y-4">
-      <div class="glass-card p-5 relative overflow-hidden space-y-4">
-        <div class="flex items-center justify-between">
-          <span id="gateZoneBadge" class="px-2.5 py-1 rounded-lg text-[11px] font-bold tracking-wide uppercase bg-purple-500/15 border border-purple-500/30 text-purple-300">
-            Зона
-          </span>
-          <span id="gateTierBadge" class="text-[11px] font-semibold text-zinc-400">
-            Уровень: Атлет
-          </span>
-        </div>
-
-        <div class="space-y-1">
-          <div class="text-xs text-zinc-400 font-medium">Упражнение:</div>
-          <h2 id="gateExName" class="text-xl font-bold text-white tracking-tight">
-            Алмазные отжимания
-          </h2>
-        </div>
-
-        <!-- Target Plan Pill -->
-        <div class="p-3.5 rounded-2xl bg-zinc-900/90 border border-white/5 flex items-center justify-between">
-          <div>
-            <div class="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">Норматив сейчас:</div>
-            <div id="gateExPlan" class="text-lg font-black text-emerald-400">
-              3 подхода × 12 повторений
-            </div>
-          </div>
-          <div id="gateExIcon" class="text-3xl">💎</div>
-        </div>
-
-        <!-- Debt Alert if any -->
-        <div id="gateDebtAlert" class="hidden p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2.5">
-          <span class="text-base">⚠️</span>
-          <div class="text-[11px] text-amber-200 leading-snug">
-            <span class="font-bold">Штрафной долг с прошлых дней:</span>
-            <span id="gateDebtDetails" class="block text-amber-300/90 text-[10px] mt-0.5">+1 подход за вчерашний пропуск</span>
-          </div>
-        </div>
-
-        <!-- Technique Hint -->
-        <div class="p-3 rounded-xl bg-white/[0.03] border border-white/5 space-y-1 text-left">
-          <div class="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Фокус техники:</div>
-          <p id="gateExCue" class="text-xs text-zinc-300 leading-relaxed">
-            Большие и указательные пальцы соединены. Локти прижимайте под 45° к телу. Пиковое сжатие центра груди вверху.
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Gate Action Buttons -->
-    <div class="space-y-3 pb-2">
-      <button type="button" onclick="startWorkoutSession()" class="w-full py-4 px-5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-black font-extrabold text-base flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-500/20">
-        <span>⚡️</span>
-        <span>ДА, ВЫПОЛНЯЮ</span>
+  <div id="workoutOverlay" class="fixed inset-0 z-50 bg-black flex flex-col justify-between p-6 hidden safe-top safe-bottom">
+    <!-- Top Action Bar -->
+    <div class="flex items-center justify-between">
+      <button type="button" onclick="abortWorkoutSession()" class="h-9 px-3.5 rounded-xl bg-zinc-900 border border-white/10 text-xs font-medium text-zinc-400 active:scale-95 transition">
+        ✕ Закрыть
       </button>
-
-      <button type="button" onclick="openSkipModal()" class="w-full py-3.5 px-5 rounded-2xl bg-zinc-900 hover:bg-zinc-800 active:scale-95 border border-white/10 text-zinc-300 hover:text-white font-semibold text-sm transition">
-        <span>❌ Нет, сейчас не могу (указать причину)</span>
-      </button>
-
-      <div class="text-center">
-        <button type="button" onclick="closeGateView()" class="text-[11px] text-zinc-500 hover:text-zinc-400 underline">
-          Свернуть в приложение V-Gate
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ========================================== -->
-  <!-- 2. WORKOUT INTERACTIVE SESSION OVERLAY -->
-  <!-- ========================================== -->
-  <div id="workoutOverlay" class="fixed inset-0 z-50 bg-black flex flex-col justify-between p-5 hidden safe-top safe-bottom">
-    <div class="flex items-center justify-between pt-2">
-      <button type="button" onclick="abortWorkoutSession()" class="px-3 py-1.5 rounded-xl bg-zinc-900 border border-white/10 text-xs text-zinc-400">
-        ✕ Прервать
-      </button>
-      <div id="sessionProgressLabel" class="text-xs font-bold text-emerald-400 uppercase tracking-wider">
+      <div id="sessionProgressLabel" class="text-xs font-semibold text-zinc-400 tracking-wider uppercase">
         Подход 1 из 3
       </div>
-      <div class="w-8"></div>
+      <div class="w-16 text-right">
+        <span id="sessionZoneLabel" class="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Грудь</span>
+      </div>
     </div>
 
-    <!-- Center Workout Display -->
-    <div class="my-auto text-center space-y-6">
-      <div class="space-y-2">
-        <h2 id="sessionExTitle" class="text-2xl font-black text-white">Алмазные отжимания</h2>
-        <p id="sessionExSubtitle" class="text-xs text-zinc-400">Сохраняй темп, выдыхай на усилии</p>
+    <!-- Active Set Counter Mode -->
+    <div id="setCounterBox" class="my-auto text-center space-y-6">
+      <div class="space-y-1.5 px-4">
+        <h2 id="sessionExTitle" class="text-2xl font-bold tracking-tight text-white">Отжимания с ногами на диване</h2>
+        <p id="sessionExCue" class="text-xs text-zinc-400 max-w-xs mx-auto leading-relaxed">
+          Акцент на верхний ключичный пучок груди. Без включения трицепса.
+        </p>
       </div>
 
-      <!-- Main Counter Display / Timer -->
-      <div class="w-48 h-48 mx-auto rounded-full glass-card border-2 border-emerald-500/40 flex flex-col items-center justify-center p-4 glow-emerald relative">
-        <div id="sessionMainValue" class="text-5xl font-black tracking-tight text-white">
+      <!-- Giant Clean Number -->
+      <div class="py-4">
+        <div id="sessionMainValue" class="text-7xl font-extrabold tracking-tighter text-white font-mono">
           12
         </div>
-        <div id="sessionUnitLabel" class="text-xs font-semibold text-zinc-400 uppercase tracking-wider mt-1">
+        <div id="sessionUnitLabel" class="text-xs font-medium text-zinc-500 uppercase tracking-widest mt-2">
           повторений
         </div>
       </div>
 
-      <!-- Set Indicator Dots -->
+      <!-- Clean Set Dots -->
       <div id="sessionDotsContainer" class="flex items-center justify-center gap-2">
         <!-- populated by JS -->
       </div>
     </div>
 
-    <!-- Rest Timer Overlay (hidden by default) -->
-    <div id="restTimerBox" class="hidden my-auto text-center space-y-4">
-      <div class="text-xs text-purple-400 font-bold uppercase tracking-wider">Отдых между подходами</div>
-      <div id="restSeconds" class="text-6xl font-black text-white">30</div>
-      <p class="text-xs text-zinc-500">Восстанови дыхание перед следующим подходом</p>
-      <button type="button" onclick="skipRestTimer()" class="px-4 py-2 rounded-xl bg-zinc-900 border border-white/10 text-xs text-zinc-300 font-medium">
-        Пропустить отдых ➔
-      </button>
+    <!-- Rest Timer Mode (between sets) -->
+    <div id="restTimerBox" class="hidden my-auto text-center space-y-5">
+      <div class="text-xs text-zinc-500 uppercase tracking-widest font-semibold">Отдых между подходами</div>
+      <div id="restSeconds" class="text-8xl font-black text-white font-mono tracking-tighter">
+        30
+      </div>
+      <div class="pt-2">
+        <button type="button" onclick="skipRestTimer()" class="px-4 py-2 rounded-xl bg-zinc-900 border border-white/10 text-xs text-zinc-300 font-medium active:scale-95 transition">
+          Пропустить отдых ➔
+        </button>
+      </div>
     </div>
 
-    <!-- Action Bottom Button -->
-    <div class="pb-2">
-      <button type="button" id="sessionActionBtn" onclick="completeCurrentSet()" class="w-full py-4 px-5 rounded-2xl bg-white hover:bg-zinc-200 active:scale-95 text-black font-extrabold text-base transition shadow-lg shadow-white/10">
-        ✓ Подход выполнен
+    <!-- Bottom Action Button -->
+    <div class="space-y-3 pb-1">
+      <button type="button" id="sessionActionBtn" onclick="completeCurrentSet()" class="w-full py-4 px-5 rounded-2xl bg-white hover:bg-zinc-200 active:scale-98 text-black font-bold text-base transition flex items-center justify-center gap-2">
+        <span>Подход выполнен</span>
+      </button>
+      <button type="button" id="sessionSkipBtn" onclick="openSkipModal()" class="w-full py-2.5 text-center text-xs text-zinc-500 hover:text-zinc-400 active:scale-95 transition">
+        Не могу сейчас выполнить (указать причину)
       </button>
     </div>
   </div>
 
   <!-- ========================================== -->
-  <!-- 3. WORKOUT VICTORY / UNLOCK OVERLAY -->
+  <!-- 2. WORKOUT VICTORY / UNLOCK OVERLAY -->
   <!-- ========================================== -->
   <div id="victoryOverlay" class="fixed inset-0 z-50 bg-black flex flex-col justify-between p-6 hidden safe-top safe-bottom text-center">
-    <div class="pt-6">
-      <div class="w-20 h-20 mx-auto rounded-3xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-4xl mb-4 glow-emerald">
-        🏆
+    <div class="pt-8">
+      <div class="w-14 h-14 mx-auto rounded-full bg-zinc-900 border border-white/10 flex items-center justify-center text-2xl mb-4 text-emerald-400 font-bold">
+        ✓
       </div>
-      <h2 class="text-2xl font-black text-white">Шлагбаум открыт!</h2>
-      <p class="text-xs text-zinc-400 mt-1">Отличная работа. Тело сказало спасибо за дисциплину.</p>
+      <h2 class="text-2xl font-bold text-white tracking-tight">Норматив выполнен</h2>
+      <p class="text-xs text-zinc-400 mt-1">Доступ к приложению открыт. Стрик увеличен.</p>
     </div>
 
-    <div class="glass-card p-5 space-y-3 my-auto">
-      <div class="text-xs text-zinc-400">Результат сессии:</div>
-      <div id="victorySummaryText" class="text-base font-bold text-emerald-400">
-        3 подхода выполнены полностью
+    <div class="app-card p-5 space-y-2 my-auto max-w-sm mx-auto w-full text-left">
+      <div class="text-[11px] uppercase font-semibold text-zinc-500 tracking-wider">Результат сессии</div>
+      <div id="victorySummaryText" class="text-sm font-semibold text-white">
+        Отжимания с ногами на диване: 3 подхода
       </div>
-      <div class="text-[11px] text-zinc-500">
-        Стрик увеличен • Долг списан • Доступ разблокирован
+      <div class="text-xs text-emerald-400/90 pt-1">
+        Долг списан • Прогресс зафиксирован
       </div>
     </div>
 
-    <div class="space-y-3 pb-2">
-      <button type="button" onclick="proceedToTargetApp()" class="w-full py-4 px-5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-black font-extrabold text-base transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2">
-        <span>🚀</span>
+    <div class="space-y-2.5 pb-2 max-w-sm mx-auto w-full">
+      <button type="button" onclick="proceedToTargetApp()" class="w-full py-4 px-5 rounded-2xl bg-white hover:bg-zinc-200 active:scale-98 text-black font-bold text-sm transition">
         <span id="targetAppBtnText">Открыть Telegram</span>
       </button>
-      <button type="button" onclick="closeVictoryOverlay()" class="w-full py-3 rounded-2xl bg-zinc-900 border border-white/10 text-xs text-zinc-300 font-medium">
-        Вернуться в меню V-Gate
+      <button type="button" onclick="closeVictoryOverlay()" class="w-full py-3 rounded-2xl bg-zinc-900 border border-white/10 text-xs text-zinc-300 font-medium active:scale-98 transition">
+        Остаться в V-Gate
       </button>
     </div>
   </div>
 
   <!-- ========================================== -->
-  <!-- 4. REASON MODAL SHEET (Отказ / Причина) -->
+  <!-- 3. SKIP REASON MODAL BOTTOM SHEET -->
   <!-- ========================================== -->
-  <div id="skipModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col justify-end hidden">
-    <div class="glass-card p-6 space-y-4 rounded-t-3xl border-b-0 max-h-[90vh] overflow-y-auto safe-bottom">
+  <div id="skipModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex flex-col justify-end hidden">
+    <div class="app-card p-6 space-y-4 rounded-t-3xl border-b-0 max-h-[85vh] overflow-y-auto safe-bottom">
       <div class="flex items-center justify-between">
-        <div class="space-y-0.5">
-          <h3 class="text-lg font-bold text-white">Почему сейчас пропуск?</h3>
-          <p class="text-[11px] text-zinc-400">ИИ анализирует причины и контекст времени для оптимизации плана</p>
+        <div>
+          <h3 class="text-base font-bold text-white">Причина пропуска</h3>
+          <p class="text-xs text-zinc-400 mt-0.5">Фиксация контекста отказа</p>
         </div>
-        <button type="button" onclick="closeSkipModal()" class="w-8 h-8 rounded-full bg-zinc-800 text-zinc-400 flex items-center justify-center text-sm">
+        <button type="button" onclick="closeSkipModal()" class="w-8 h-8 rounded-full bg-zinc-800 text-zinc-400 flex items-center justify-center text-sm active:scale-90 transition">
           ✕
         </button>
       </div>
 
-      <div class="space-y-2">
-        <label class="block text-xs font-medium text-zinc-300">
-          Опиши причину своими словами:
-        </label>
-        <textarea id="skipReasonInput" rows="3" placeholder="Например: на работе, не дома, все спят и не хочу шуметь, устал..." class="w-full p-3.5 rounded-2xl bg-zinc-900 border border-white/10 text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-emerald-500/50"></textarea>
+      <div class="space-y-2 pt-1">
+        <textarea id="skipReasonInput" rows="3" placeholder="Например: на работе, не дома, сильно устал..." class="w-full p-3.5 rounded-2xl bg-zinc-900 border border-white/10 text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-white/30"></textarea>
       </div>
 
-      <!-- Debt Warning Notice -->
-      <div class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-1">
-        <div class="flex items-center gap-2 text-xs font-bold text-amber-300">
-          <span>⚠️</span> <span>Накопление долга</span>
-        </div>
-        <p class="text-[11px] text-amber-200/80 leading-relaxed">
-          Этот пропуск не отменяет норматив. К завтрашнему плану будет автоматически добавлен **+1 подход** в долг.
-        </p>
+      <div class="p-3.5 rounded-xl bg-zinc-900 border border-white/5 text-xs text-zinc-400 leading-relaxed">
+        К нормативу на завтра будет добавлен <span class="text-amber-400 font-semibold">+1 штрафной подход</span> в долг.
       </div>
 
       <div class="space-y-2 pt-1">
-        <button type="button" onclick="submitSkipReason()" class="w-full py-3.5 px-4 rounded-2xl bg-white hover:bg-zinc-200 active:scale-95 text-black font-bold text-sm transition">
-          Зафиксировать пропуск и открыть доступ ➔
+        <button type="button" onclick="submitSkipReason()" class="w-full py-3.5 px-4 rounded-2xl bg-white hover:bg-zinc-200 active:scale-98 text-black font-bold text-sm transition">
+          Зафиксировать пропуск и открыть доступ
         </button>
         <button type="button" onclick="closeSkipModal()" class="w-full py-2.5 text-xs text-zinc-500 hover:text-zinc-400">
-          Отмена (вернуться к упражнению)
+          Отмена
         </button>
       </div>
     </div>
   </div>
 
   <!-- ========================================== -->
-  <!-- 5. MAIN APP NAVIGATION & CONTENT TABS -->
+  <!-- 4. MAIN APP CONTENT -->
   <!-- ========================================== -->
-  <main class="max-w-md mx-auto px-4 space-y-5">
+  <main class="max-w-md mx-auto px-4 space-y-4">
     
     <!-- Top Header Bar -->
-    <header class="flex items-center justify-between pt-1">
-      <div class="flex items-center gap-2.5">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500/20 to-purple-500/20 border border-white/10 flex items-center justify-center text-lg font-black text-emerald-400">
-          V
-        </div>
-        <div>
-          <div class="text-sm font-black tracking-tight text-white">V-GATE</div>
-          <div id="headerDateStr" class="text-[10px] text-zinc-500 font-medium">Пятница, 9 октября</div>
-        </div>
+    <header class="flex items-center justify-between pt-2 pb-1">
+      <div>
+        <div class="text-base font-black tracking-tight text-white">V-GATE</div>
+        <div id="headerDateStr" class="text-[11px] text-zinc-500 font-medium">Понедельник, 12 октября</div>
       </div>
 
-      <div class="flex items-center gap-2">
-        <button type="button" onclick="triggerGateDemo()" class="px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold active:scale-95 transition flex items-center gap-1.5">
-          <span>⚡️</span> <span>Шлагбаум</span>
-        </button>
+      <div id="streakPill" class="px-3 py-1.5 rounded-xl bg-zinc-900 border border-white/10 text-xs font-medium text-zinc-300 flex items-center gap-1.5">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+        <span id="headerStreakCount">0 дней</span>
       </div>
     </header>
 
-    <!-- TAB 1: DASHBOARD (Главная) -->
-    <section id="tabDashboard" class="space-y-4">
-      <!-- Status Hero Banner -->
-      <div class="glass-card p-5 space-y-4 relative overflow-hidden">
-        <div class="flex items-center justify-between">
-          <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-            Сегодняшний статус
-          </span>
-          <span id="dashStreakBadge" class="px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold flex items-center gap-1">
-            🔥 3 дня стрик
-          </span>
-        </div>
-
-        <div class="flex items-baseline justify-between">
-          <div>
-            <div id="dashTodayStatus" class="text-2xl font-black text-white">
-              В ожидании доступа
-            </div>
-            <div id="dashTodaySub" class="text-xs text-zinc-400 mt-0.5">
-              Следующий запуск Telegram активирует шлагбаум
-            </div>
-          </div>
-        </div>
-
-        <!-- Metric Badges Row -->
-        <div class="grid grid-cols-3 gap-2 pt-1">
-          <div class="p-3 rounded-xl bg-zinc-900/90 border border-white/5 text-center">
-            <div class="text-[10px] text-zinc-500 uppercase font-semibold">Сделано</div>
-            <div id="dashDoneCount" class="text-lg font-black text-emerald-400 mt-0.5">0</div>
-          </div>
-          <div class="p-3 rounded-xl bg-zinc-900/90 border border-white/5 text-center">
-            <div class="text-[10px] text-zinc-500 uppercase font-semibold">Пропуски</div>
-            <div id="dashSkipCount" class="text-lg font-black text-zinc-400 mt-0.5">0</div>
-          </div>
-          <div class="p-3 rounded-xl bg-zinc-900/90 border border-white/5 text-center">
-            <div class="text-[10px] text-zinc-500 uppercase font-semibold">Долг (подх.)</div>
-            <div id="dashDebtCount" class="text-lg font-black text-amber-400 mt-0.5">0</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Quick Gate Trigger Card -->
-      <div class="glass-card p-4 flex items-center justify-between bg-gradient-to-r from-emerald-950/30 to-zinc-900 border border-emerald-500/20">
+    <!-- ==================== TAB 1: WORKOUT (ГЛАВНАЯ) ==================== -->
+    <section id="tabWorkout" class="space-y-3.5">
+      
+      <!-- Debt Notification Card (Conditional) -->
+      <div id="debtCard" class="hidden app-card p-4 flex items-center justify-between border-amber-500/20 bg-amber-500/[0.04]">
         <div class="space-y-0.5">
-          <div class="text-xs font-bold text-white flex items-center gap-1.5">
-            <span>🛡</span> <span>Тест блокировщика</span>
-          </div>
-          <div class="text-[10px] text-zinc-400">Проверить как открывается экран шлагбаума</div>
+          <div class="text-xs font-bold text-amber-400">Накоплен штрафной долг</div>
+          <div id="debtCardText" class="text-[11px] text-zinc-400">+1 подход за предыдущий пропуск</div>
         </div>
-        <button type="button" onclick="openGateView()" class="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-black font-extrabold text-xs transition">
-          Запустить
-        </button>
+        <span id="debtBadgeCount" class="px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-400 text-xs font-bold font-mono">
+          +1
+        </span>
       </div>
 
-      <!-- 4 Zones Breakdown -->
-      <div class="space-y-2.5">
+      <!-- Central Exercise Challenge Card -->
+      <div class="app-card p-5 space-y-4">
+        <div class="flex items-center justify-between">
+          <span id="mainCardZone" class="text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-lg bg-zinc-900 border border-white/10 text-zinc-300">
+            ВЕРХ ГРУДИ
+          </span>
+          <span id="mainCardTier" class="text-xs font-medium text-zinc-500">
+            Уровень: Атлет
+          </span>
+        </div>
+
+        <div class="space-y-1">
+          <h2 id="mainCardTitle" class="text-xl font-bold tracking-tight text-white">
+            Отжимания с ногами на диване
+          </h2>
+          <div id="mainCardPlan" class="text-sm font-semibold text-zinc-300 font-mono">
+            3 подхода × 12 повторений
+          </div>
+        </div>
+
+        <!-- Biomechanical Focus Cue -->
+        <div class="app-card-inner p-3.5 text-xs text-zinc-400 leading-relaxed">
+          <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1">Фокус техники:</div>
+          <p id="mainCardCue">
+            Наклон корпуса 35° смещает 100% нагрузки на верхний ключичный пучок груди. Низ груди выключен, трицепс не перегружать.
+          </p>
+        </div>
+
+        <!-- Action Controls -->
+        <div class="space-y-2 pt-1">
+          <button type="button" onclick="startWorkoutSession()" class="w-full py-4 px-5 rounded-2xl bg-white hover:bg-zinc-200 active:scale-98 text-black font-bold text-sm transition">
+            Начать выполнение
+          </button>
+          <button type="button" onclick="openSkipModal()" class="w-full py-2.5 text-center text-xs text-zinc-500 hover:text-zinc-400 active:scale-95 transition">
+            Пропустить сегодня (с фиксацией причины)
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Metrics Row -->
+      <div class="grid grid-cols-3 gap-2">
+        <div class="app-card p-3 text-center">
+          <div class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Сегодня</div>
+          <div id="metricDoneCount" class="text-lg font-bold text-white mt-0.5">0</div>
+        </div>
+        <div class="app-card p-3 text-center">
+          <div class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Пропуски</div>
+          <div id="metricSkipCount" class="text-lg font-bold text-zinc-400 mt-0.5">0</div>
+        </div>
+        <div class="app-card p-3 text-center">
+          <div class="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Долг (подх.)</div>
+          <div id="metricDebtCount" class="text-lg font-bold text-amber-400 mt-0.5">0</div>
+        </div>
+      </div>
+
+      <!-- Recent Activity Log Section -->
+      <div class="space-y-2 pt-1">
         <div class="flex items-center justify-between px-1">
-          <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider">4 Зоны V-Силуэта</h3>
-          <span class="text-[10px] text-zinc-500">12 базовых упражнений</span>
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-zinc-500">История сессий</h3>
+          <span id="logCountLabel" class="text-[10px] text-zinc-600">0 записей</span>
         </div>
-
-        <div class="grid grid-cols-2 gap-2.5">
-          <div onclick="switchTab('exercises'); filterExercises('back')" class="p-3.5 rounded-2xl glass-card hover:border-emerald-500/40 active:scale-98 transition space-y-1">
-            <div class="text-xl">🦅</div>
-            <div class="text-xs font-bold text-white">Спина и осанка</div>
-            <div class="text-[10px] text-zinc-500">Широчайшие и разгибатели</div>
-          </div>
-
-          <div onclick="switchTab('exercises'); filterExercises('chest')" class="p-3.5 rounded-2xl glass-card hover:border-emerald-500/40 active:scale-98 transition space-y-1">
-            <div class="text-xl">💎</div>
-            <div class="text-xs font-bold text-white">Центр и верх груди</div>
-            <div class="text-[10px] text-zinc-500">Алмазные и ноги на диване</div>
-          </div>
-
-          <div onclick="switchTab('exercises'); filterExercises('shoulders')" class="p-3.5 rounded-2xl glass-card hover:border-emerald-500/40 active:scale-98 transition space-y-1">
-            <div class="text-xl">⚡️</div>
-            <div class="text-xs font-bold text-white">Плечи и дельты</div>
-            <div class="text-[10px] text-zinc-500">Ширина плеч (без трицепса)</div>
-          </div>
-
-          <div onclick="switchTab('exercises'); filterExercises('core')" class="p-3.5 rounded-2xl glass-card hover:border-emerald-500/40 active:scale-98 transition space-y-1">
-            <div class="text-xl">🌪</div>
-            <div class="text-xs font-bold text-white">Вакуум и талия</div>
-            <div class="text-[10px] text-zinc-500">Сужение талии, кор</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 2: AI ANALYTICS (Анализ ИИ причин и паттернов) -->
-    <section id="tabAi" class="space-y-4 hidden">
-      <div class="glass-card p-5 space-y-3 relative overflow-hidden">
-        <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-sm">🤖</div>
-          <div>
-            <h3 class="text-sm font-bold text-white">ИИ-Анализ причин и контекста</h3>
-            <p class="text-[10px] text-zinc-400">Паттерны твоего дня, время отказов и адаптация</p>
-          </div>
-        </div>
-
-        <div id="aiSummaryBanner" class="p-3.5 rounded-2xl bg-zinc-900/90 border border-white/5 space-y-2">
-          <div class="text-xs text-zinc-300 leading-relaxed" id="aiInsightText">
-            Сбор первых данных. Напиши настоящую причину при первом пропуске, и ИИ составит карту твоих временных окон.
-          </div>
-        </div>
-      </div>
-
-      <!-- Time of Day Heat Breakdown -->
-      <div class="glass-card p-4 space-y-3">
-        <div class="text-xs font-bold text-white">Распределение отказов по времени суток</div>
-        <div class="grid grid-cols-3 gap-2 text-center">
-          <div class="p-2.5 rounded-xl bg-zinc-900 border border-white/5">
-            <div class="text-[10px] text-zinc-500">Утро (06-12)</div>
-            <div id="aiMorningSkips" class="text-sm font-black text-white mt-0.5">0</div>
-          </div>
-          <div class="p-2.5 rounded-xl bg-zinc-900 border border-white/5">
-            <div class="text-[10px] text-zinc-500">День (12-18)</div>
-            <div id="aiDaySkips" class="text-sm font-black text-white mt-0.5">0</div>
-          </div>
-          <div class="p-2.5 rounded-xl bg-zinc-900 border border-white/5">
-            <div class="text-[10px] text-zinc-500">Вечер (18-24)</div>
-            <div id="aiEveningSkips" class="text-sm font-black text-white mt-0.5">0</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- History of reasons -->
-      <div class="space-y-2">
-        <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-wider px-1">История записей причин</h4>
-        <div id="reasonsHistoryList" class="space-y-2">
+        <div id="recentActivityList" class="space-y-2">
           <!-- Populated by JS -->
-          <div class="p-3 rounded-2xl bg-zinc-900/60 border border-white/5 text-center text-xs text-zinc-500">
-            Записей пока нет
+          <div class="app-card p-4 text-center text-xs text-zinc-500">
+            Записей пока нет. Выполни первую сессию выше.
           </div>
         </div>
       </div>
+
     </section>
 
-    <!-- TAB 3: EXERCISES ROSTER (База 12 упражнений) -->
-    <section id="tabExercises" class="space-y-4 hidden">
-      <!-- Zone Filter Pills -->
-      <div class="flex items-center gap-1.5 overflow-x-auto pb-1 custom-scroll">
-        <button type="button" onclick="filterExercises('all')" id="filterBtnAll" class="px-3 py-1.5 rounded-xl bg-white text-black font-bold text-xs whitespace-nowrap active:scale-95 transition">
-          Все (12)
+    <!-- ==================== TAB 2: EXERCISES (БАЗА) ==================== -->
+    <section id="tabExercises" class="space-y-3.5 hidden">
+      
+      <!-- Zone Filter Chips -->
+      <div class="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+        <button type="button" onclick="filterExercises('all')" id="filterBtnAll" class="px-3.5 py-1.5 rounded-xl bg-white text-black font-semibold text-xs whitespace-nowrap active:scale-95 transition">
+          Все
         </button>
-        <button type="button" onclick="filterExercises('back')" id="filterBtnBack" class="px-3 py-1.5 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white font-medium text-xs whitespace-nowrap active:scale-95 transition border border-white/5">
-          Спина (3)
+        <button type="button" onclick="filterExercises('chest')" id="filterBtnChest" class="px-3.5 py-1.5 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white font-medium text-xs whitespace-nowrap active:scale-95 transition border border-white/5">
+          Верх и центр груди
         </button>
-        <button type="button" onclick="filterExercises('chest')" id="filterBtnChest" class="px-3 py-1.5 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white font-medium text-xs whitespace-nowrap active:scale-95 transition border border-white/5">
-          Центр и верх (3)
+        <button type="button" onclick="filterExercises('back')" id="filterBtnBack" class="px-3.5 py-1.5 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white font-medium text-xs whitespace-nowrap active:scale-95 transition border border-white/5">
+          Спина и осанка
         </button>
-        <button type="button" onclick="filterExercises('shoulders')" id="filterBtnShoulders" class="px-3 py-1.5 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white font-medium text-xs whitespace-nowrap active:scale-95 transition border border-white/5">
-          Плечи и дельты (3)
+        <button type="button" onclick="filterExercises('shoulders')" id="filterBtnShoulders" class="px-3.5 py-1.5 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white font-medium text-xs whitespace-nowrap active:scale-95 transition border border-white/5">
+          Плечи
         </button>
-        <button type="button" onclick="filterExercises('core')" id="filterBtnCore" class="px-3 py-1.5 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white font-medium text-xs whitespace-nowrap active:scale-95 transition border border-white/5">
-          Вакуум и пресс (3)
+        <button type="button" onclick="filterExercises('core')" id="filterBtnCore" class="px-3.5 py-1.5 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white font-medium text-xs whitespace-nowrap active:scale-95 transition border border-white/5">
+          Вакуум и талия
         </button>
       </div>
 
-      <!-- Exercise Cards List -->
-      <div id="exercisesContainer" class="space-y-3">
+      <!-- List of exercises -->
+      <div id="exercisesContainer" class="space-y-2.5">
         <!-- Rendered by JS -->
       </div>
     </section>
 
-    <!-- TAB 4: SETTINGS & SHORTCUTS GUIDE -->
-    <section id="tabSettings" class="space-y-4 hidden">
+    <!-- ==================== TAB 3: SETTINGS (НАСТРОЙКИ) ==================== -->
+    <section id="tabSettings" class="space-y-3.5 hidden">
       
-      <!-- iOS Shortcuts Integration Guide Card -->
-      <div class="glass-card p-5 space-y-3 border-emerald-500/30">
-        <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-base">⚡️</div>
-          <div>
-            <h3 class="text-sm font-bold text-white">Привязка к приложению «Команды»</h3>
-            <p class="text-[10px] text-zinc-400">Авто-открытие V-Gate при запуске Telegram</p>
-          </div>
-        </div>
-
-        <div class="space-y-2 text-xs text-zinc-300 leading-relaxed bg-zinc-900/80 p-3.5 rounded-2xl border border-white/5">
-          <div class="flex items-start gap-2">
-            <span class="w-4 h-4 rounded-full bg-emerald-500 text-black font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">1</span>
-            <span>Открой стандартное приложение <b>«Команды»</b> на айфоне.</span>
-          </div>
-          <div class="flex items-start gap-2">
-            <span class="w-4 h-4 rounded-full bg-emerald-500 text-black font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">2</span>
-            <span>Перейди во вкладку <b>«Автоматизация»</b> и нажми <b>«+» (Новая автоматизация)</b>.</span>
-          </div>
-          <div class="flex items-start gap-2">
-            <span class="w-4 h-4 rounded-full bg-emerald-500 text-black font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">3</span>
-            <span>Выбери <b>«Приложение»</b> ➔ выбери <b>Telegram</b> (или любое соцприложение) ➔ галочка «Открыто» ➔ <b>«Немедленный запуск»</b>.</span>
-          </div>
-          <div class="flex items-start gap-2">
-            <span class="w-4 h-4 rounded-full bg-emerald-500 text-black font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">4</span>
-            <span>Действие: <b>«Открыть URL»</b> ➔ вставь ссылку этого PWA:</span>
-          </div>
-          <div class="pt-1">
-            <button type="button" onclick="copyPwaUrl()" id="copyUrlBtn" class="w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-[11px] border border-white/10 active:scale-95 transition flex items-center justify-center gap-1.5">
-              <span>📋</span> <span>Скопировать ссылку для команды</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Target App Deep Link Setting -->
-      <div class="glass-card p-4 space-y-3">
-        <div class="text-xs font-bold text-white">Какое приложение открывать после выполнения?</div>
-        <div class="grid grid-cols-3 gap-2">
-          <button type="button" onclick="setTargetApp('tg://')" id="btnTargetTg" class="p-2.5 rounded-xl bg-white text-black font-bold text-xs text-center transition">
-            Telegram
-          </button>
-          <button type="button" onclick="setTargetApp('youtube://')" id="btnTargetYt" class="p-2.5 rounded-xl bg-zinc-900 text-zinc-300 font-medium text-xs text-center border border-white/5 transition">
-            YouTube
-          </button>
-          <button type="button" onclick="setTargetApp('instagram://')" id="btnTargetInsta" class="p-2.5 rounded-xl bg-zinc-900 text-zinc-300 font-medium text-xs text-center border border-white/5 transition">
-            Instagram
-          </button>
-        </div>
-      </div>
-
-      <!-- Difficulty Tier Setting -->
-      <div class="glass-card p-4 space-y-3">
-        <div class="text-xs font-bold text-white">Уровень сложности тренировок</div>
-        <div class="grid grid-cols-3 gap-2">
-          <button type="button" onclick="setTier(1)" id="tierBtn1" class="p-2.5 rounded-xl bg-zinc-900 text-zinc-300 font-medium text-xs text-center border border-white/5 transition">
+      <!-- Difficulty Segmented Control -->
+      <div class="app-card p-4 space-y-2.5">
+        <div class="text-xs font-semibold text-white">Уровень нагрузки</div>
+        <div class="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-zinc-900 border border-white/5">
+          <button type="button" onclick="setTier(1)" id="tierBtn1" class="py-2 rounded-lg text-xs font-medium text-zinc-400 transition">
             Новичок
           </button>
-          <button type="button" onclick="setTier(2)" id="tierBtn2" class="p-2.5 rounded-xl bg-white text-black font-bold text-xs text-center transition">
+          <button type="button" onclick="setTier(2)" id="tierBtn2" class="py-2 rounded-lg text-xs font-semibold bg-white text-black transition">
             Атлет
           </button>
-          <button type="button" onclick="setTier(3)" id="tierBtn3" class="p-2.5 rounded-xl bg-zinc-900 text-zinc-300 font-medium text-xs text-center border border-white/5 transition">
+          <button type="button" onclick="setTier(3)" id="tierBtn3" class="py-2 rounded-lg text-xs font-medium text-zinc-400 transition">
             Зверь
           </button>
         </div>
       </div>
 
-      <!-- Database JSON Backup -->
-      <div class="glass-card p-4 flex items-center justify-between">
+      <!-- Target App Setting -->
+      <div class="app-card p-4 space-y-2.5">
+        <div class="text-xs font-semibold text-white">Разблокируемое приложение</div>
+        <div class="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-zinc-900 border border-white/5">
+          <button type="button" onclick="setTargetApp('tg://')" id="btnTargetTg" class="py-2 rounded-lg text-xs font-semibold bg-white text-black transition">
+            Telegram
+          </button>
+          <button type="button" onclick="setTargetApp('youtube://')" id="btnTargetYt" class="py-2 rounded-lg text-xs font-medium text-zinc-400 transition">
+            YouTube
+          </button>
+          <button type="button" onclick="setTargetApp('instagram://')" id="btnTargetInsta" class="py-2 rounded-lg text-xs font-medium text-zinc-400 transition">
+            Instagram
+          </button>
+        </div>
+      </div>
+
+      <!-- iOS Shortcuts Integration Guide -->
+      <div class="app-card p-4 space-y-3">
+        <div class="text-xs font-semibold text-white">Автоматизация через «Команды» iOS</div>
+        
+        <div class="app-card-inner p-3.5 space-y-2 text-xs text-zinc-400 leading-relaxed">
+          <p>1. Открой стандартное приложение <b>«Команды»</b> на айфоне.</p>
+          <p>2. Вкладка <b>«Автоматизация»</b> ➔ нажми <b>«+»</b> (Создать).</p>
+          <p>3. Выбери <b>«Приложение»</b> ➔ выбери <b>Telegram</b> ➔ галочка «Открыто» ➔ <b>«Немедленный запуск»</b>.</p>
+          <p>4. Действие: <b>«Открыть URL»</b> ➔ вставь ссылку:</p>
+          <div class="pt-1">
+            <button type="button" onclick="copyPwaUrl()" id="copyUrlBtn" class="w-full py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-medium text-xs active:scale-95 transition">
+              Скопировать ссылку для команды
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Backup Export & Import -->
+      <div class="app-card p-4 flex items-center justify-between">
         <div>
-          <div class="text-xs font-bold text-white">Резервная копия базы</div>
-          <div class="text-[10px] text-zinc-400">Сохранить историю отказов и прогресса</div>
+          <div class="text-xs font-semibold text-white">Резервная копия данных</div>
+          <div class="text-[11px] text-zinc-500">История сессий и настроек</div>
         </div>
         <div class="flex items-center gap-2">
-          <button type="button" onclick="exportGateData()" class="px-3 py-1.5 rounded-xl bg-zinc-800 text-xs font-medium text-zinc-200">
-            Скачать
+          <button type="button" onclick="exportGateData()" class="px-3 py-1.5 rounded-xl bg-zinc-900 border border-white/10 text-xs font-medium text-zinc-300 active:scale-95 transition">
+            Экспорт
           </button>
-          <label class="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 text-xs font-medium cursor-pointer">
+          <label class="px-3 py-1.5 rounded-xl bg-zinc-900 border border-white/10 text-xs font-medium text-zinc-300 cursor-pointer active:scale-95 transition">
             Импорт
             <input type="file" accept=".json" onchange="importGateData(event)" class="hidden">
           </label>
         </div>
       </div>
+
     </section>
 
   </main>
 
   <!-- ========================================== -->
-  <!-- 6. BOTTOM NAVIGATION DOCK -->
+  <!-- 5. FLOATING MINIMALIST DOCK NAVIGATION -->
   <!-- ========================================== -->
-  <nav class="fixed bottom-0 left-0 right-0 z-40 bg-[#0d0d10]/95 backdrop-blur-xl border-t border-white/[0.08] safe-bottom px-6 py-2">
-    <div class="max-w-md mx-auto flex items-center justify-around">
-      <button type="button" onclick="switchTab('dashboard')" id="navDashboard" class="flex flex-col items-center gap-1 text-zinc-400 transition tab-active">
-        <span class="text-xl">📊</span>
-        <span class="text-[10px] font-semibold">Главная</span>
+  <nav class="fixed left-0 right-0 z-40 flex justify-center pointer-events-none px-4 select-none" style="bottom: max(env(safe-area-inset-bottom, 20px), 16px);">
+    <div class="pointer-events-auto h-[58px] px-6 bg-[#18181b]/90 backdrop-blur-2xl border border-white/10 rounded-full flex items-center justify-between gap-6 shadow-2xl shadow-black/80 max-w-[280px] w-full">
+      
+      <!-- Tab 1: Workout -->
+      <button type="button" onclick="switchTab('workout')" id="navWorkout" class="flex flex-col items-center justify-center w-12 h-12 app-tab-active transition active:scale-90" aria-label="Тренировка">
+        <svg class="w-5 h-5 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 5v14M18 5v14M2 9v6M22 9v6M6 12h12"/>
+        </svg>
+        <span class="text-[9px] font-medium tracking-tight mt-0.5">Тренировка</span>
       </button>
 
-      <button type="button" onclick="switchTab('ai')" id="navAi" class="flex flex-col items-center gap-1 text-zinc-400 transition">
-        <span class="text-xl">🤖</span>
-        <span class="text-[10px] font-semibold">Анализ ИИ</span>
+      <!-- Tab 2: Exercises -->
+      <button type="button" onclick="switchTab('exercises')" id="navExercises" class="flex flex-col items-center justify-center w-12 h-12 text-zinc-500 transition active:scale-90" aria-label="База">
+        <svg class="w-5 h-5 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+          <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+          <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+          <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+        </svg>
+        <span class="text-[9px] font-medium tracking-tight mt-0.5">База</span>
       </button>
 
-      <button type="button" onclick="switchTab('exercises')" id="navExercises" class="flex flex-col items-center gap-1 text-zinc-400 transition">
-        <span class="text-xl">🏋️</span>
-        <span class="text-[10px] font-semibold">Упражнения</span>
+      <!-- Tab 3: Settings -->
+      <button type="button" onclick="switchTab('settings')" id="navSettings" class="flex flex-col items-center justify-center w-12 h-12 text-zinc-500 transition active:scale-90" aria-label="Настройки">
+        <svg class="w-5 h-5 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+        <span class="text-[9px] font-medium tracking-tight mt-0.5">Настройки</span>
       </button>
 
-      <button type="button" onclick="switchTab('settings')" id="navSettings" class="flex flex-col items-center gap-1 text-zinc-400 transition">
-        <span class="text-xl">⚙️</span>
-        <span class="text-[10px] font-semibold">Связка iOS</span>
-      </button>
     </div>
   </nav>
 
   <!-- ========================================== -->
-  <!-- 7. APPLICATION LOGIC & INDEXEDDB ENGINE -->
+  <!-- 6. APPLICATION LOGIC & INDEXEDDB ENGINE -->
   <!-- ========================================== -->
   <script>
     // --- 12 V-GATE EXERCISES DATABASE ---
+    // Specifically calibrated for Upper/Center Chest, Posture, Shoulder width, Waist vacuum.
+    // Strictly eliminating triceps isolation and lower chest.
     const EXERCISES_DATA = [
-      // Зона 1: Спина и осанка
+      // Зона: Центр и верх груди (трицепс и низ груди исключены)
+      {
+        id: 'chest_decline',
+        zone: 'chest',
+        zoneName: 'Верх груди (ключичный пучок)',
+        name: 'Отжимания с ногами на диване',
+        cue: 'Носки на возвышении 30-40 см, руки чуть шире плеч. Наклон корпуса смещает 100% нагрузки в верхний ключичный пучок груди. Низ груди отключен.',
+        tiers: {
+          1: { sets: 3, reps: 8, isTime: false, label: '3 подхода × 8 повторений' },
+          2: { sets: 3, reps: 12, isTime: false, label: '3 подхода × 12 повторений' },
+          3: { sets: 4, reps: 15, isTime: false, label: '4 подхода × 15 повторений' }
+        }
+      },
+      {
+        id: 'chest_diamond',
+        zone: 'chest',
+        zoneName: 'Центр груди',
+        name: 'Алмазные отжимания на центр',
+        cue: 'Кисти вместе под грудиной, локти 45°. Вверху НЕ выпрямляйте локти до щелчка (чтобы не отдавать вес трицепсу), а сознательно сводите грудные мышцы к центру.',
+        tiers: {
+          1: { sets: 3, reps: 8, isTime: false, label: '3 подхода × 8 повторений' },
+          2: { sets: 3, reps: 12, isTime: false, label: '3 подхода × 12 повторений' },
+          3: { sets: 4, reps: 15, isTime: false, label: '4 подхода × 15 повторений' }
+        }
+      },
+      {
+        id: 'chest_prayer',
+        zone: 'chest',
+        zoneName: 'Центр груди (изометрия)',
+        name: 'Сжатие ладоней («Молитва»)',
+        cue: 'Ладони на уровне солнечного сплетения. С максимальным усилием давите ладонями внутрь навстречу друг другу. Трицепс выключен на 100%, максимальная прорисовка ложбинки.',
+        tiers: {
+          1: { sets: 3, reps: 20, isTime: true, label: '3 подхода × 20 секунд' },
+          2: { sets: 4, reps: 25, isTime: true, label: '4 подхода × 25 секунд' },
+          3: { sets: 4, reps: 35, isTime: true, label: '4 подхода × 35 секунд' }
+        }
+      },
+
+      // Зона: Спина и осанка
       {
         id: 'back_superman',
         zone: 'back',
         zoneName: 'Спина и осанка',
         name: 'Лодочка на полу',
-        icon: '🦅',
         cue: 'Лежа на животе. На выдохе одновременно оторвите грудь и прямые ноги от пола, сведите лопатки.',
         tiers: {
           1: { sets: 3, reps: 12, isTime: false, label: '3 подхода × 12 повторений' },
-          2: { sets: 3, reps: 16, isTime: false, label: '3 подхода × 16 повторений + статика 5с' },
-          3: { sets: 4, reps: 20, isTime: false, label: '4 подхода × 20 повторений + статика 10с' }
+          2: { sets: 3, reps: 16, isTime: false, label: '3 подхода × 16 повторений' },
+          3: { sets: 4, reps: 20, isTime: false, label: '4 подхода × 20 повторений' }
         }
       },
       {
@@ -606,7 +507,6 @@
         zone: 'back',
         zoneName: 'Спина и осанка',
         name: 'Кобра W-to-Y (сведение лопаток)',
-        icon: '🐍',
         cue: 'Лежа на животе. Разгибайте руки в Y вперед, затем мощно тяните локти назад к ребрам в букву W.',
         tiers: {
           1: { sets: 3, reps: 12, isTime: false, label: '3 подхода × 12 повторений' },
@@ -619,8 +519,7 @@
         zone: 'back',
         zoneName: 'Спина и осанка',
         name: 'Обратная планка на пятках',
-        icon: '📐',
-        cue: 'Упор руками сзади. Поднимите таз, вытянув тело в струну. Держите напряжение ягодиц и спины.',
+        cue: 'Упор руками сзади. Поднимите таз, вытянув тело в струну. Держите напряжение ягодиц и разгибателей спины.',
         tiers: {
           1: { sets: 3, reps: 25, isTime: true, label: '3 подхода × 25 секунд' },
           2: { sets: 3, reps: 40, isTime: true, label: '3 подхода × 40 секунд' },
@@ -628,72 +527,17 @@
         }
       },
 
-      // Зона 2: Центр и верх груди (трицепс и низ груди исключены)
-      {
-        id: 'chest_diamond',
-        zone: 'chest',
-        zoneName: 'Центр груди',
-        name: 'Алмазные отжимания на центр',
-        icon: '💎',
-        cue: 'Пальцы домиком под центром грудины. Локти под 45°. Вверху НЕ блокируйте локти (не отдавайте вес трицепсу!), а прожимайте центр груди волевым сжатием на 1 сек.',
-        tiers: {
-          1: { sets: 3, reps: 8, isTime: false, label: '3 подхода × 8 повторений' },
-          2: { sets: 3, reps: 12, isTime: false, label: '3 подхода × 12 повторений' },
-          3: { sets: 4, reps: 15, isTime: false, label: '4 подхода × 15 повторений' }
-        }
-      },
-      {
-        id: 'chest_decline',
-        zone: 'chest',
-        zoneName: 'Верх груди (ключичный пучок)',
-        name: 'Отжимания с ногами на диване',
-        icon: '🏔️',
-        cue: 'Носки на диване/стуле, руки на полу чуть шире плеч. Наклон корпуса 35° смещает 100% нагрузки на верхний ключичный пучок груди. Низ груди полностью отключен.',
-        tiers: {
-          1: { sets: 3, reps: 8, isTime: false, label: '3 подхода × 8 повторений' },
-          2: { sets: 3, reps: 12, isTime: false, label: '3 подхода × 12 повторений' },
-          3: { sets: 4, reps: 15, isTime: false, label: '4 подхода × 15 повторений' }
-        }
-      },
-      {
-        id: 'chest_prayer',
-        zone: 'chest',
-        zoneName: 'Центр груди (изоляция)',
-        name: 'Сжатие ладоней у грудины («Молитва»)',
-        icon: '🙏',
-        cue: 'Ладони на уровне солнечного сплетения (низ рёбер). Изо всех сил давите ладонями внутрь и вниз, соединяя грудные мышцы к центру. Трицепс выключен на 100%.',
-        tiers: {
-          1: { sets: 3, reps: 20, isTime: true, label: '3 подхода × 20 секунд' },
-          2: { sets: 4, reps: 25, isTime: true, label: '4 подхода × 25 секунд' },
-          3: { sets: 4, reps: 35, isTime: true, label: '4 подхода × 35 секунд' }
-        }
-      },
-
-      // Зона 3: Плечи и дельты (исключен трицепс)
+      // Зона: Плечи и дельты
       {
         id: 'shoulders_pike',
         zone: 'shoulders',
         zoneName: 'Плечи и верх груди',
         name: 'Отжимания уголком (Pike)',
-        icon: '🔺',
-        cue: 'Таз поднят вверх углом. Опускайтесь головой вперед к полу по траектории треугольника. Включает переднюю/среднюю дельту и стыкуется с верхом груди.',
+        cue: 'Таз поднят вверх. Опускайтесь головой вперед к полу по траектории треугольника. Включает переднюю/среднюю дельту без трицепса.',
         tiers: {
           1: { sets: 3, reps: 8, isTime: false, label: '3 подхода × 8 повторений' },
           2: { sets: 3, reps: 12, isTime: false, label: '3 подхода × 12 повторений' },
           3: { sets: 4, reps: 15, isTime: false, label: '4 подхода × 15 повторений' }
-        }
-      },
-      {
-        id: 'shoulders_taps',
-        zone: 'shoulders',
-        zoneName: 'Плечи и баланс',
-        name: 'Планка с касанием плеч',
-        icon: '✋',
-        cue: 'Планка на прямых руках. Поочередно касайтесь противоположного плеча, удерживая таз неподвижным. Стабилизирует плечевой пояс без нагрузки на трицепс.',
-        tiers: {
-          1: { sets: 3, reps: 16, isTime: false, label: '3 подхода × 16 касаний' },
-          2: { sets: 3, reps: 24, isTime: false, label: '3 подхода × 24 касания' },
-          3: { sets: 4, reps: 30, isTime: false, label: '4 подхода × 30 касаний' }
         }
       },
       {
@@ -701,23 +545,33 @@
         zone: 'shoulders',
         zoneName: 'Плечи (средняя дельта)',
         name: 'Т-планка на ширину плеч',
-        icon: '🦅',
-        cue: 'Из упора лежа разворачивайте корпус боком, поднимая прямую руку строго вверх в Т-форму с фиксацией на 1 сек. Нагружает среднюю дельту для V-силуэта без трицепса.',
+        cue: 'Из упора лежа разворачивайте корпус боком, поднимая прямую руку вертикально вверх с фиксацией на 1 сек.',
         tiers: {
           1: { sets: 3, reps: 12, isTime: false, label: '3 подхода × 12 разворотов' },
           2: { sets: 3, reps: 16, isTime: false, label: '3 подхода × 16 разворотов' },
           3: { sets: 4, reps: 20, isTime: false, label: '4 подхода × 20 разворотов' }
         }
       },
+      {
+        id: 'shoulders_taps',
+        zone: 'shoulders',
+        zoneName: 'Плечи и баланс',
+        name: 'Планка с касанием плеч',
+        cue: 'Планка на прямых руках. Поочередно касайтесь противоположного плеча, удерживая таз неподвижным.',
+        tiers: {
+          1: { sets: 3, reps: 16, isTime: false, label: '3 подхода × 16 касаний' },
+          2: { sets: 3, reps: 24, isTime: false, label: '3 подхода × 24 касания' },
+          3: { sets: 4, reps: 30, isTime: false, label: '4 подхода × 30 касаний' }
+        }
+      },
 
-      // Зона 4: Пресс и талия
+      // Зона: Вакуум и талия
       {
         id: 'core_vacuum',
         zone: 'core',
         zoneName: 'Вакуум и талия',
         name: 'Вакуум живота (сужение талии)',
-        icon: '🌪️',
-        cue: 'Полный выдох всего воздуха. Без вдоха максимально втяните живот под ребра к позвоночнику.',
+        cue: 'Полный выдох всего воздуха. Без вдоха максимально втяните живот под ребра к позвоночнику. Удерживайте вакуум.',
         tiers: {
           1: { sets: 3, reps: 15, isTime: true, label: '3 подхода × 15 секунд' },
           2: { sets: 4, reps: 20, isTime: true, label: '4 подхода × 20 секунд' },
@@ -729,8 +583,7 @@
         zone: 'core',
         zoneName: 'Вакуум и талия',
         name: 'Мертвый жук (Dead Bug)',
-        icon: '🪲',
-        cue: 'Лежа на спине, поясница намертво прижата к полу. Поочередно вытягивайте противоположные руку и ногу.',
+        cue: 'Лежа на спине, поясница прижата к полу. Поочередно вытягивайте противоположные руку и ногу.',
         tiers: {
           1: { sets: 3, reps: 16, isTime: false, label: '3 подхода × 16 повторений' },
           2: { sets: 3, reps: 24, isTime: false, label: '3 подхода × 24 повторения' },
@@ -742,8 +595,7 @@
         zone: 'core',
         zoneName: 'Вакуум и талия',
         name: 'Медленный диагональный альпинист',
-        icon: '🧗',
-        cue: 'Упор лежа. Медленно тяните правое колено к левому локтю с фиксацией на 1 сек, затем противоположную ногу.',
+        cue: 'Упор лежа. Медленно тяните колено к противоположному локтю с фиксацией на 1 сек, без инерции.',
         tiers: {
           1: { sets: 3, reps: 16, isTime: false, label: '3 подхода × 16 повторений' },
           2: { sets: 3, reps: 24, isTime: false, label: '3 подхода × 24 повторения' },
@@ -817,54 +669,29 @@
     let currentTier = 2; // 1: Новичок, 2: Атлет, 3: Зверь
     let targetAppUrl = 'tg://';
     let currentStreak = 0;
-    let accumulatedDebt = 0; // extra sets accumulated from skips
+    let accumulatedDebt = 0;
     let currentActiveExercise = null;
     let activeSession = null;
     let restTimerInterval = null;
 
-    // --- WORKOUT SESSION LOGIC ---
+    // Pick exercise for today: chest prioritized
     function pickNextExercise() {
-      const today = new Date().toISOString().slice(0, 10);
-      // Pick rotation based on date day or random
       const dayNum = new Date().getDate();
-      const exIndex = (dayNum + Math.floor(Math.random() * 4)) % EXERCISES_DATA.length;
-      return EXERCISES_DATA[exIndex];
-    }
-
-    function openGateView() {
-      currentActiveExercise = pickNextExercise();
-      const tierData = currentActiveExercise.tiers[currentTier];
-
-      document.getElementById('gateZoneBadge').innerText = currentActiveExercise.zoneName;
-      document.getElementById('gateTierBadge').innerText = currentTier === 1 ? 'Новичок' : (currentTier === 2 ? 'Атлет' : 'Зверь');
-      document.getElementById('gateExName').innerText = currentActiveExercise.name;
-      document.getElementById('gateExIcon').innerText = currentActiveExercise.icon;
-      document.getElementById('gateExCue').innerText = currentActiveExercise.cue;
-
-      let planText = tierData.label;
-      if (accumulatedDebt > 0) {
-        document.getElementById('gateDebtAlert').classList.remove('hidden');
-        document.getElementById('gateDebtDetails').innerText = `+${accumulatedDebt} штрафных подхода к нормативу за предыдущие отказы`;
-        planText += ` (+${accumulatedDebt} в долг)`;
+      // Prioritize chest exercises (indices 0, 1, 2)
+      const chestList = EXERCISES_DATA.filter(e => e.zone === 'chest');
+      const otherList = EXERCISES_DATA.filter(e => e.zone !== 'chest');
+      
+      // 2 out of 3 days focus strictly on upper or center chest
+      if (dayNum % 3 !== 0) {
+        return chestList[dayNum % chestList.length];
       } else {
-        document.getElementById('gateDebtAlert').classList.add('hidden');
+        return otherList[dayNum % otherList.length];
       }
-      document.getElementById('gateExPlan').innerText = planText;
-
-      document.getElementById('gateOverlay').classList.remove('hidden');
-      try { if (navigator.vibrate) navigator.vibrate(50); } catch(e){}
     }
 
-    function closeGateView() {
-      document.getElementById('gateOverlay').classList.add('hidden');
-    }
-
-    function triggerGateDemo() {
-      openGateView();
-    }
-
-    function startWorkoutSession() {
-      closeGateView();
+    // --- WORKOUT INTERACTIVE SESSION ---
+    function startWorkoutSession(overrideExercise = null) {
+      currentActiveExercise = overrideExercise || currentActiveExercise || pickNextExercise();
       const tierData = currentActiveExercise.tiers[currentTier];
       const totalSets = tierData.sets + accumulatedDebt;
 
@@ -875,11 +702,18 @@
         totalSets: totalSets,
         reps: tierData.reps,
         isTime: tierData.isTime,
-        secondsLeft: tierData.isTime ? tierData.reps : null,
         timerInterval: null
       };
 
       document.getElementById('sessionExTitle').innerText = currentActiveExercise.name;
+      document.getElementById('sessionExCue').innerText = currentActiveExercise.cue;
+      document.getElementById('sessionZoneLabel').innerText = currentActiveExercise.zone === 'chest' ? 'ГРУДЬ' : (currentActiveExercise.zone === 'back' ? 'СПИНА' : (currentActiveExercise.zone === 'shoulders' ? 'ПЛЕЧИ' : 'КОР'));
+
+      document.getElementById('restTimerBox').classList.add('hidden');
+      document.getElementById('setCounterBox').classList.remove('hidden');
+      document.getElementById('sessionActionBtn').classList.remove('hidden');
+      document.getElementById('sessionSkipBtn').classList.remove('hidden');
+
       document.getElementById('workoutOverlay').classList.remove('hidden');
       renderSessionStep();
     }
@@ -892,20 +726,24 @@
       dotsCont.innerHTML = '';
       for (let i = 1; i <= s.totalSets; i++) {
         const d = document.createElement('div');
-        d.className = `w-2.5 h-2.5 rounded-full ${i < s.currentSet ? 'bg-emerald-400' : (i === s.currentSet ? 'bg-white ring-2 ring-emerald-400' : 'bg-zinc-700')}`;
+        d.className = `w-2 h-2 rounded-full transition-all ${i < s.currentSet ? 'bg-emerald-400' : (i === s.currentSet ? 'bg-white ring-2 ring-white/30' : 'bg-zinc-700')}`;
         dotsCont.appendChild(d);
       }
 
+      const mainVal = document.getElementById('sessionMainValue');
+      const unitLabel = document.getElementById('sessionUnitLabel');
+      const actionBtn = document.getElementById('sessionActionBtn');
+
       if (s.isTime) {
-        document.getElementById('sessionMainValue').innerText = s.reps;
-        document.getElementById('sessionUnitLabel').innerText = 'секунд (статика)';
-        document.getElementById('sessionActionBtn').innerText = '▶️ Запустить таймер подхода';
-        document.getElementById('sessionActionBtn').onclick = runStaticTimer;
+        mainVal.innerText = s.reps;
+        unitLabel.innerText = 'секунд (статика)';
+        actionBtn.innerText = 'Запустить секундомер подхода';
+        actionBtn.onclick = runStaticTimer;
       } else {
-        document.getElementById('sessionMainValue').innerText = s.reps;
-        document.getElementById('sessionUnitLabel').innerText = 'повторений';
-        document.getElementById('sessionActionBtn').innerText = '✓ Подход выполнен';
-        document.getElementById('sessionActionBtn').onclick = completeCurrentSet;
+        mainVal.innerText = s.reps;
+        unitLabel.innerText = 'повторений';
+        actionBtn.innerText = 'Подход выполнен';
+        actionBtn.onclick = completeCurrentSet;
       }
     }
 
@@ -928,22 +766,20 @@
     }
 
     function completeCurrentSet() {
-      try { if (navigator.vibrate) navigator.vibrate(60); } catch(e){}
+      try { if (navigator.vibrate) navigator.vibrate(50); } catch(e){}
       if (activeSession.currentSet < activeSession.totalSets) {
-        // Run rest timer between sets (30s)
         activeSession.currentSet++;
         startRestPeriod(30);
       } else {
-        // All sets finished! VICTORY!
         finishWorkoutSessionSuccess();
       }
     }
 
     function startRestPeriod(seconds) {
-      document.getElementById('workoutOverlay').classList.remove('hidden');
-      document.getElementById('restTimerBox').classList.remove('hidden');
-      document.querySelector('#workoutOverlay .my-auto.text-center').classList.add('hidden');
+      document.getElementById('setCounterBox').classList.add('hidden');
       document.getElementById('sessionActionBtn').classList.add('hidden');
+      document.getElementById('sessionSkipBtn').classList.add('hidden');
+      document.getElementById('restTimerBox').classList.remove('hidden');
 
       let sLeft = seconds;
       document.getElementById('restSeconds').innerText = sLeft;
@@ -960,15 +796,15 @@
     function skipRestTimer() {
       if (restTimerInterval) clearInterval(restTimerInterval);
       document.getElementById('restTimerBox').classList.add('hidden');
-      document.querySelector('#workoutOverlay .my-auto.text-center').classList.remove('hidden');
+      document.getElementById('setCounterBox').classList.remove('hidden');
       document.getElementById('sessionActionBtn').classList.remove('hidden');
+      document.getElementById('sessionSkipBtn').classList.remove('hidden');
       renderSessionStep();
     }
 
     async function finishWorkoutSessionSuccess() {
       document.getElementById('workoutOverlay').classList.add('hidden');
       
-      // Save to logs
       const entry = {
         timestamp: new Date().toISOString(),
         date: new Date().toISOString().slice(0, 10),
@@ -984,16 +820,14 @@
       };
       await dbAddLog(entry);
 
-      // Clear debt and update streak
       accumulatedDebt = 0;
       currentStreak++;
       await dbSetSetting('accumulatedDebt', 0);
       await dbSetSetting('streak', currentStreak);
       await dbSetSetting('lastDoneDate', entry.date);
 
-      // Render victory
-      document.getElementById('victorySummaryText').innerText = `${activeSession.exercise.name}: ${activeSession.totalSets} подходов выполнено`;
-      document.getElementById('targetAppBtnText').innerText = targetAppUrl.includes('tg') ? 'Открыть Telegram ➔' : (targetAppUrl.includes('youtube') ? 'Открыть YouTube ➔' : 'Открыть приложение ➔');
+      document.getElementById('victorySummaryText').innerText = `${activeSession.exercise.name}: ${activeSession.totalSets} подходов`;
+      document.getElementById('targetAppBtnText').innerText = targetAppUrl.includes('tg') ? 'Открыть Telegram' : (targetAppUrl.includes('youtube') ? 'Открыть YouTube' : 'Открыть приложение');
       document.getElementById('victoryOverlay').classList.remove('hidden');
 
       refreshDashboard();
@@ -1005,7 +839,7 @@
       if (restTimerInterval) clearInterval(restTimerInterval);
       document.getElementById('workoutOverlay').classList.add('hidden');
       document.getElementById('restTimerBox').classList.add('hidden');
-      document.querySelector('#workoutOverlay .my-auto.text-center').classList.remove('hidden');
+      document.getElementById('setCounterBox').classList.remove('hidden');
       document.getElementById('sessionActionBtn').classList.remove('hidden');
     }
 
@@ -1017,7 +851,7 @@
       window.location.href = targetAppUrl;
     }
 
-    // --- SKIP MODAL & DEBT ACCUMULATION ---
+    // --- SKIP MODAL & DEBT ---
     function openSkipModal() {
       document.getElementById('skipModal').classList.remove('hidden');
       setTimeout(() => document.getElementById('skipReasonInput').focus(), 150);
@@ -1030,11 +864,10 @@
     async function submitSkipReason() {
       const reasonText = document.getElementById('skipReasonInput').value.trim();
       if (!reasonText) {
-        alert('Пожалуйста, напиши причину (например: на работе, не дома, все спят)');
+        alert('Пожалуйста, укажи причину');
         return;
       }
 
-      // Add 1 extra set to debt
       accumulatedDebt += 1;
       await dbSetSetting('accumulatedDebt', accumulatedDebt);
 
@@ -1055,37 +888,33 @@
 
       document.getElementById('skipReasonInput').value = '';
       closeSkipModal();
-      closeGateView();
+      abortWorkoutSession();
 
-      alert(`Пропуск зафиксирован: "${reasonText}".\nВ долг добавлен +1 подход на завтра.\nДоступ открыт!`);
       refreshDashboard();
       window.location.href = targetAppUrl;
     }
 
     // --- TAB SWITCHING ---
     function switchTab(tab) {
-      document.getElementById('tabDashboard').classList.add('hidden');
-      document.getElementById('tabAi').classList.add('hidden');
+      document.getElementById('tabWorkout').classList.add('hidden');
       document.getElementById('tabExercises').classList.add('hidden');
       document.getElementById('tabSettings').classList.add('hidden');
 
-      ['navDashboard', 'navAi', 'navExercises', 'navSettings'].forEach(id => {
-        document.getElementById(id).classList.remove('tab-active');
+      ['navWorkout', 'navExercises', 'navSettings'].forEach(id => {
+        const el = document.getElementById(id);
+        el.className = 'flex flex-col items-center justify-center w-12 h-12 text-zinc-500 transition active:scale-90';
       });
 
-      if (tab === 'dashboard') {
-        document.getElementById('tabDashboard').classList.remove('hidden');
-        document.getElementById('navDashboard').classList.add('tab-active');
-      } else if (tab === 'ai') {
-        document.getElementById('tabAi').classList.remove('hidden');
-        document.getElementById('navAi').classList.add('tab-active');
-        refreshAiTab();
+      if (tab === 'workout') {
+        document.getElementById('tabWorkout').classList.remove('hidden');
+        document.getElementById('navWorkout').className = 'flex flex-col items-center justify-center w-12 h-12 app-tab-active transition active:scale-90';
+        refreshDashboard();
       } else if (tab === 'exercises') {
         document.getElementById('tabExercises').classList.remove('hidden');
-        document.getElementById('navExercises').classList.add('tab-active');
+        document.getElementById('navExercises').className = 'flex flex-col items-center justify-center w-12 h-12 app-tab-active transition active:scale-90';
       } else if (tab === 'settings') {
         document.getElementById('tabSettings').classList.remove('hidden');
-        document.getElementById('navSettings').classList.add('tab-active');
+        document.getElementById('navSettings').className = 'flex flex-col items-center justify-center w-12 h-12 app-tab-active transition active:scale-90';
       }
     }
 
@@ -1098,81 +927,73 @@
       const doneCount = todayLogs.filter(l => l.status === 'completed').length;
       const skipCount = todayLogs.filter(l => l.status === 'skipped').length;
 
-      document.getElementById('dashDoneCount').innerText = doneCount;
-      document.getElementById('dashSkipCount').innerText = skipCount;
-      document.getElementById('dashDebtCount').innerText = accumulatedDebt;
-      document.getElementById('dashStreakBadge').innerText = `🔥 ${currentStreak} дн. стрик`;
+      document.getElementById('metricDoneCount').innerText = doneCount;
+      document.getElementById('metricSkipCount').innerText = skipCount;
+      document.getElementById('metricDebtCount').innerText = accumulatedDebt;
+      document.getElementById('headerStreakCount').innerText = `${currentStreak} дн.`;
 
-      if (doneCount > 0) {
-        document.getElementById('dashTodayStatus').innerText = 'Цель сегодня выполнена';
-        document.getElementById('dashTodaySub').innerText = 'Отличный V-силуэт формируется стабильностью';
-      } else if (accumulatedDebt > 0) {
-        document.getElementById('dashTodayStatus').innerText = `Накоплен долг: ${accumulatedDebt} подх.`;
-        document.getElementById('dashTodaySub').innerText = 'Пройди шлагбаум сегодня, чтобы погасить штраф';
+      // Debt card state
+      const debtCard = document.getElementById('debtCard');
+      if (accumulatedDebt > 0) {
+        debtCard.classList.remove('hidden');
+        document.getElementById('debtCardText').innerText = `+${accumulatedDebt} штрафных подхода к сегодняшнему нормативу`;
+        document.getElementById('debtBadgeCount').innerText = `+${accumulatedDebt}`;
       } else {
-        document.getElementById('dashTodayStatus').innerText = 'В ожидании доступа';
-        document.getElementById('dashTodaySub').innerText = 'Следующий запуск Telegram активирует шлагбаум';
+        debtCard.classList.add('hidden');
       }
-    }
 
-    // --- AI TAB REASON ANALYSIS ---
-    async function refreshAiTab() {
-      const logs = await dbGetAllLogs();
-      const skips = logs.filter(l => l.status === 'skipped');
+      // Pick or restore current exercise
+      if (!currentActiveExercise) {
+        currentActiveExercise = pickNextExercise();
+      }
+      const tierData = currentActiveExercise.tiers[currentTier];
+      document.getElementById('mainCardZone').innerText = currentActiveExercise.zoneName.toUpperCase();
+      document.getElementById('mainCardTier').innerText = `Уровень: ${currentTier === 1 ? 'Новичок' : (currentTier === 2 ? 'Атлет' : 'Зверь')}`;
+      document.getElementById('mainCardTitle').innerText = currentActiveExercise.name;
+      
+      let planStr = tierData.label;
+      if (accumulatedDebt > 0) {
+        planStr += ` (+${accumulatedDebt} в долг)`;
+      }
+      document.getElementById('mainCardPlan').innerText = planStr;
+      document.getElementById('mainCardCue').innerText = currentActiveExercise.cue;
 
-      let morning = 0, day = 0, evening = 0;
-      skips.forEach(s => {
-        const hour = parseInt((s.time || '12:00').split(':')[0], 10);
-        if (hour >= 6 && hour < 12) morning++;
-        else if (hour >= 12 && hour < 18) day++;
-        else evening++;
-      });
+      // Populate recent activity log
+      const logContainer = document.getElementById('recentActivityList');
+      logContainer.innerHTML = '';
+      document.getElementById('logCountLabel').innerText = `${logs.length} записей`;
 
-      document.getElementById('aiMorningSkips').innerText = morning;
-      document.getElementById('aiDaySkips').innerText = day;
-      document.getElementById('aiEveningSkips').innerText = evening;
-
-      const insight = document.getElementById('aiInsightText');
-      if (skips.length === 0) {
-        insight.innerText = 'Отличная дисциплина! Пропусков пока нет. Как только ты отклонишь упражнение с причиной, ИИ проанализирует контекст.';
+      if (logs.length === 0) {
+        logContainer.innerHTML = '<div class="app-card p-4 text-center text-xs text-zinc-500">Записей пока нет. Выполни первую сессию выше.</div>';
       } else {
-        let maxTime = 'днем (12:00-18:00)';
-        if (morning > day && morning > evening) maxTime = 'утром (06:00-12:00)';
-        else if (evening > day && evening > morning) maxTime = 'вечером (18:00-24:00)';
-
-        insight.innerHTML = `⚠️ <b>Паттерн:</b> Чаще всего пропуски происходят <b>${maxTime}</b> (зафиксировано ${skips.length} отказов).<br><br>💡 <b>Рекомендация:</b> Если ты вне дома или на работе в эти часы, выполняй базовую лодочку и вакуум в утреннем домашнем блоке. Долг сейчас: <b>${accumulatedDebt} подходов</b>.`;
+        logs.slice(-5).reverse().forEach(l => {
+          const isDone = l.status === 'completed';
+          const card = document.createElement('div');
+          card.className = 'app-card p-3.5 flex items-center justify-between text-xs';
+          card.innerHTML = `
+            <div class="space-y-0.5">
+              <div class="font-semibold text-white flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full ${isDone ? 'bg-emerald-400' : 'bg-amber-400'}"></span>
+                <span>${escapeHtml(l.exerciseName)}</span>
+              </div>
+              <div class="text-[11px] text-zinc-500">
+                ${l.date} • ${l.time} ${!isDone && l.reason ? `• «${escapeHtml(l.reason)}»` : ''}
+              </div>
+            </div>
+            <div class="text-[11px] font-mono font-medium ${isDone ? 'text-emerald-400' : 'text-amber-400'}">
+              ${isDone ? `✓ ${l.setsDone} подх.` : '+1 долг'}
+            </div>
+          `;
+          logContainer.appendChild(card);
+        });
       }
-
-      // Populate history list
-      const list = document.getElementById('reasonsHistoryList');
-      list.innerHTML = '';
-      if (skips.length === 0) {
-        list.innerHTML = '<div class="p-3 rounded-2xl bg-zinc-900/60 border border-white/5 text-center text-xs text-zinc-500">Записей пока нет</div>';
-        return;
-      }
-
-      skips.slice().reverse().forEach(s => {
-        const card = document.createElement('div');
-        card.className = 'glass-card p-3.5 space-y-1.5';
-        card.innerHTML = `
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-white">${s.exerciseName}</span>
-            <span class="text-[10px] text-zinc-500">${s.date} • ${s.time}</span>
-          </div>
-          <div class="text-xs text-amber-300 font-medium bg-amber-500/10 p-2 rounded-xl border border-amber-500/20">
-            «${escapeHtml(s.reason)}»
-          </div>
-          <div class="text-[10px] text-zinc-400">Штраф: +1 подход добавлен в долг</div>
-        `;
-        list.appendChild(card);
-      });
     }
 
     function escapeHtml(str) {
       return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    // --- EXERCISES DIRECTORY ---
+    // --- EXERCISES CATALOG ---
     function renderExercisesList(filter = 'all') {
       const container = document.getElementById('exercisesContainer');
       container.innerHTML = '';
@@ -1182,29 +1003,24 @@
       items.forEach(ex => {
         const tierData = ex.tiers[currentTier];
         const card = document.createElement('div');
-        card.className = 'glass-card p-4 space-y-2.5';
+        card.className = 'app-card p-4 space-y-2.5';
         card.innerHTML = `
           <div class="flex items-start justify-between">
-            <div class="flex items-center gap-2.5">
-              <div class="w-10 h-10 rounded-2xl bg-zinc-900 border border-white/10 flex items-center justify-center text-xl shrink-0">
-                ${ex.icon}
-              </div>
-              <div>
-                <div class="text-xs font-black text-white">${ex.name}</div>
-                <div class="text-[10px] text-purple-400 font-semibold uppercase">${ex.zoneName}</div>
-              </div>
+            <div class="space-y-0.5">
+              <div class="text-xs font-bold text-white">${escapeHtml(ex.name)}</div>
+              <div class="text-[10px] text-zinc-500 uppercase font-semibold tracking-wider">${escapeHtml(ex.zoneName)}</div>
             </div>
-            <span class="px-2 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-400 text-[10px] font-bold">
-              ${tierData.label.split('×')[1] || tierData.label}
+            <span class="px-2 py-0.5 rounded-lg bg-zinc-900 border border-white/10 text-zinc-300 text-[10px] font-mono font-medium">
+              ${tierData.label.split('×')[1] ? tierData.label.split('×')[1].trim() : tierData.label}
             </span>
           </div>
-          <p class="text-xs text-zinc-300 leading-relaxed bg-zinc-900/60 p-2.5 rounded-xl border border-white/5">
-            ${ex.cue}
+          <p class="text-xs text-zinc-400 leading-relaxed app-card-inner p-3">
+            ${escapeHtml(ex.cue)}
           </p>
           <div class="flex items-center justify-between pt-1">
-            <span class="text-[10px] text-zinc-500">План: ${tierData.label}</span>
-            <button type="button" onclick="startSingleExercise('${ex.id}')" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white font-bold text-xs transition">
-              Начать сейчас ➔
+            <span class="text-[11px] text-zinc-500 font-mono">${tierData.label}</span>
+            <button type="button" onclick="startSingleExercise('${ex.id}')" class="px-3.5 py-1.5 rounded-xl bg-white hover:bg-zinc-200 active:scale-95 text-black font-semibold text-xs transition">
+              Выполнить ➔
             </button>
           </div>
         `;
@@ -1213,22 +1029,24 @@
     }
 
     function filterExercises(zone) {
-      ['filterBtnAll', 'filterBtnBack', 'filterBtnChest', 'filterBtnShoulders', 'filterBtnCore'].forEach(id => {
+      ['filterBtnAll', 'filterBtnChest', 'filterBtnBack', 'filterBtnShoulders', 'filterBtnCore'].forEach(id => {
         const btn = document.getElementById(id);
         if (btn) {
-          btn.className = 'px-3 py-1.5 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white font-medium text-xs whitespace-nowrap active:scale-95 transition border border-white/5';
+          btn.className = 'px-3.5 py-1.5 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white font-medium text-xs whitespace-nowrap active:scale-95 transition border border-white/5';
         }
       });
-      const activeId = zone === 'all' ? 'filterBtnAll' : (zone === 'back' ? 'filterBtnBack' : (zone === 'chest' ? 'filterBtnChest' : (zone === 'shoulders' ? 'filterBtnShoulders' : 'filterBtnCore')));
+      const activeId = zone === 'all' ? 'filterBtnAll' : (zone === 'chest' ? 'filterBtnChest' : (zone === 'back' ? 'filterBtnBack' : (zone === 'shoulders' ? 'filterBtnShoulders' : 'filterBtnCore')));
       const activeBtn = document.getElementById(activeId);
-      if (activeBtn) activeBtn.className = 'px-3 py-1.5 rounded-xl bg-white text-black font-bold text-xs whitespace-nowrap active:scale-95 transition';
+      if (activeBtn) activeBtn.className = 'px-3.5 py-1.5 rounded-xl bg-white text-black font-semibold text-xs whitespace-nowrap active:scale-95 transition';
 
       renderExercisesList(zone);
     }
 
     function startSingleExercise(exId) {
-      currentActiveExercise = EXERCISES_DATA.find(e => e.id === exId) || EXERCISES_DATA[0];
-      startWorkoutSession();
+      const ex = EXERCISES_DATA.find(e => e.id === exId);
+      if (ex) {
+        startWorkoutSession(ex);
+      }
     }
 
     // --- SETTINGS CONTROLS ---
@@ -1238,12 +1056,13 @@
       [1, 2, 3].forEach(n => {
         const btn = document.getElementById(`tierBtn${n}`);
         if (n === t) {
-          btn.className = 'p-2.5 rounded-xl bg-white text-black font-bold text-xs text-center transition';
+          btn.className = 'py-2 rounded-lg text-xs font-semibold bg-white text-black transition';
         } else {
-          btn.className = 'p-2.5 rounded-xl bg-zinc-900 text-zinc-300 font-medium text-xs text-center border border-white/5 transition';
+          btn.className = 'py-2 rounded-lg text-xs font-medium text-zinc-400 transition';
         }
       });
       renderExercisesList('all');
+      refreshDashboard();
     }
 
     async function setTargetApp(scheme) {
@@ -1253,18 +1072,18 @@
       const isYt = scheme.includes('youtube');
       const isInsta = scheme.includes('instagram');
 
-      document.getElementById('btnTargetTg').className = isTg ? 'p-2.5 rounded-xl bg-white text-black font-bold text-xs text-center transition' : 'p-2.5 rounded-xl bg-zinc-900 text-zinc-300 font-medium text-xs text-center border border-white/5 transition';
-      document.getElementById('btnTargetYt').className = isYt ? 'p-2.5 rounded-xl bg-white text-black font-bold text-xs text-center transition' : 'p-2.5 rounded-xl bg-zinc-900 text-zinc-300 font-medium text-xs text-center border border-white/5 transition';
-      document.getElementById('btnTargetInsta').className = isInsta ? 'p-2.5 rounded-xl bg-white text-black font-bold text-xs text-center transition' : 'p-2.5 rounded-xl bg-zinc-900 text-zinc-300 font-medium text-xs text-center border border-white/5 transition';
+      document.getElementById('btnTargetTg').className = isTg ? 'py-2 rounded-lg text-xs font-semibold bg-white text-black transition' : 'py-2 rounded-lg text-xs font-medium text-zinc-400 transition';
+      document.getElementById('btnTargetYt').className = isYt ? 'py-2 rounded-lg text-xs font-semibold bg-white text-black transition' : 'py-2 rounded-lg text-xs font-medium text-zinc-400 transition';
+      document.getElementById('btnTargetInsta').className = isInsta ? 'py-2 rounded-lg text-xs font-semibold bg-white text-black transition' : 'py-2 rounded-lg text-xs font-medium text-zinc-400 transition';
     }
 
     function copyPwaUrl() {
       const url = window.location.origin + window.location.pathname + '?gate=1';
       navigator.clipboard.writeText(url).then(() => {
         const btn = document.getElementById('copyUrlBtn');
-        btn.innerHTML = '<span>✓</span> <span>Ссылка скопирована!</span>';
+        btn.innerText = '✓ Ссылка скопирована!';
         setTimeout(() => {
-          btn.innerHTML = '<span>📋</span> <span>Скопировать ссылку для команды</span>';
+          btn.innerText = 'Скопировать ссылку для команды';
         }, 2000);
       });
     }
@@ -1273,7 +1092,7 @@
       const logs = await dbGetAllLogs();
       const backup = {
         app: 'V-Gate',
-        version: 1,
+        version: 2,
         exportedAt: new Date().toISOString(),
         streak: currentStreak,
         debt: accumulatedDebt,
@@ -1307,7 +1126,7 @@
           accumulatedDebt = data.debt;
           await dbSetSetting('accumulatedDebt', accumulatedDebt);
         }
-        alert('Данные успешно импортированы!');
+        alert('Данные успешно импортированы');
         refreshDashboard();
       } catch (e) {
         alert('Ошибка при импорте: ' + e.message);
@@ -1320,29 +1139,24 @@
     window.addEventListener('DOMContentLoaded', async () => {
       await initDB();
 
-      // Load Settings
       currentTier = await dbGetSetting('currentTier', 2);
       targetAppUrl = await dbGetSetting('targetAppUrl', 'tg://');
       currentStreak = await dbGetSetting('streak', 0);
       accumulatedDebt = await dbGetSetting('accumulatedDebt', 0);
 
-      // Set Date String
       const options = { weekday: 'long', day: 'numeric', month: 'long' };
       document.getElementById('headerDateStr').innerText = new Intl.DateTimeFormat('ru-RU', options).format(new Date());
 
-      // Render View
       renderExercisesList('all');
       setTier(currentTier);
       setTargetApp(targetAppUrl);
       refreshDashboard();
 
-      // Check URL parameters: if ?gate=1, automatically trigger Gate
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('gate') === '1') {
-        openGateView();
+        startWorkoutSession();
       }
 
-      // Register Service Worker for 100% offline functionality
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js').catch(() => {});
       }
